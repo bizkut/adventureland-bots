@@ -1,7 +1,13 @@
 import { EventBus } from "alclient";
 import fs from "fs";
 import path from "path";
-import type { MapKey, MonsterKey, ServerKey } from "typed-adventureland";
+import type {
+  MapKey,
+  MonsterKey,
+  ServerKey,
+  ServerToClient_server_info_live,
+  ServerToClient_server_info_notlive,
+} from "typed-adventureland";
 import url from "url";
 import { logWarning } from "../utilities/logging.js";
 
@@ -59,38 +65,50 @@ type CharacterData = {
   in: string;
 };
 type MonsterData = {
-  id: string;
   lastSeen: number;
-  x: number;
-  y: number;
-  map: MapKey;
-  in: string;
+  id?: string;
+  x?: number;
+  y?: number;
+  map?: MapKey;
+  in?: string;
   target?: string;
+  hp?: number;
 };
 type ServerData = {
+  /** Recently seen characters */
   characters: {
     [T in string]?: CharacterData;
   };
+  /** Recently seen monsters */
   monsters: {
     [T in MonsterKey]?: MonsterData[];
+  };
+  /** Time the next monster will spawn */
+  spawns: {
+    [T in MonsterKey]?: number;
   };
 };
 
 const serverData = new Map<ServerKey, ServerData>();
 
-EventBus.on("entities_updated", (observer, monsters, characters) => {
-  const key = observer.server.key;
-  const lastSeen = Date.now();
-
-  // Get the server data
+function getServerData(key: ServerKey): ServerData {
   let serverDatum = serverData.get(key);
   if (serverDatum === undefined) {
     serverDatum = {
       characters: {},
       monsters: {},
+      spawns: {},
     };
     serverData.set(key, serverDatum);
   }
+  return serverDatum;
+}
+
+EventBus.on("entities_updated", (observer, monsters, characters) => {
+  const key = observer.server.key;
+  const lastSeen = Date.now();
+
+  const serverDatum = getServerData(key);
 
   // Update the server data with monsters we see
   for (const monster of monsters) {
@@ -106,6 +124,7 @@ EventBus.on("entities_updated", (observer, monsters, characters) => {
       existing.in = monster.in;
       existing.x = monster.x;
       existing.y = monster.y;
+      existing.hp = monster.hp;
     } else {
       // Add
       serverDatum.monsters[monster.type]!.push({
@@ -116,8 +135,11 @@ EventBus.on("entities_updated", (observer, monsters, characters) => {
         x: monster.x,
         y: monster.y,
         target: monster.target,
+        hp: monster.hp,
       });
     }
+
+    delete serverDatum.spawns[monster.type]; // Clear the spawn time
   }
 
   // Update the server data with characters we see
@@ -135,32 +157,91 @@ EventBus.on("entities_updated", (observer, monsters, characters) => {
 EventBus.on("monster_death", (observer, monster) => {
   const key = observer.server.key;
 
-  const serverDatum = serverData.get(key);
+  const serverDatum = getServerData(key);
 
-  if (serverDatum?.monsters[monster.type] === undefined) return; // No data
+  const existing = serverDatum.monsters[monster.type]?.find((m) => m.id === monster.id);
 
-  const existing = serverDatum.monsters[monster.type]!.find((m) => m.id === monster.id);
-  if (existing === undefined) return;
+  // Update the next spawn time
+  const gMonster = observer.game.G.monsters[monster.type];
+  if (gMonster.respawn <= 200) {
+    // If respawn is <= 200s, it respawns at that time
+    serverDatum.spawns[monster.type] = Date.now() + gMonster.respawn * 1000;
+  } else {
+    // Otherwise, it respawns randomly between 28% early and 10% late (we'll use the late value)
+    serverDatum.spawns[monster.type] = Date.now() + gMonster.respawn * 1100;
+  }
 
-  // Remove it
-  serverDatum.monsters[monster.type]!.splice(serverDatum.monsters[monster.type]!.indexOf(existing), 1);
+  if (existing !== undefined)
+    // Remove it
+    serverDatum.monsters[monster.type]!.splice(serverDatum.monsters[monster.type]!.indexOf(existing), 1);
+});
+
+EventBus.on("server_info_updated", (observer, serverInfo) => {
+  const key = observer.server.key;
+  const lastSeen = Date.now();
+
+  const serverDatum = getServerData(key);
+
+  for (const monsterKey of Object.keys(serverInfo) as MonsterKey[]) {
+    const gMonster = observer.game.G.monsters[monsterKey];
+    if (gMonster === undefined) continue; // Not a valid monster key
+
+    serverDatum.monsters[monsterKey] ??= [];
+
+    const data = serverInfo[monsterKey] as ServerToClient_server_info_live | ServerToClient_server_info_notlive;
+    if (data.live === true) {
+      const existing = serverDatum.monsters[monsterKey][0];
+      if (existing) {
+        // Update
+        existing.lastSeen = lastSeen;
+        if (data.map !== undefined) {
+          existing.map = data.map;
+          existing.in = data.map;
+        }
+        if (data.x !== undefined) existing.x = data.x;
+        if (data.y !== undefined) existing.y = data.y;
+        if (data.target !== undefined) existing.target = data.target;
+        if (data.hp !== undefined) existing.hp = data.hp;
+      } else {
+        // Add
+        serverDatum.monsters[monsterKey].push({
+          lastSeen,
+          map: data.map,
+          in: data.map,
+          x: data.x,
+          y: data.y,
+          target: data.target,
+          hp: data.hp,
+        });
+      }
+    } else {
+      const existing = serverDatum.monsters[monsterKey][0];
+
+      // Update the next spawn time
+      if (data.spawn) {
+        serverDatum.spawns[monsterKey] = Date.parse(data.spawn);
+      } else if (existing !== undefined) {
+        // TODO: Update the next spawn time
+      }
+
+      serverDatum.monsters[monsterKey] = []; // Remove it
+    }
+  }
 });
 
 const DATA_FOLDER = path.join(path.dirname(url.fileURLToPath(import.meta.url)), "../../data");
-const MONSTER_DATA_FOLDER = path.join(DATA_FOLDER, `monsters`);
 const CHARACTER_DATA_FOLDER = path.join(DATA_FOLDER, `characters`);
-fs.mkdirSync(MONSTER_DATA_FOLDER, { recursive: true });
+const MONSTER_DATA_FOLDER = path.join(DATA_FOLDER, `monsters`);
+const SPAWN_DATA_FOLDER = path.join(DATA_FOLDER, `spawns`);
 fs.mkdirSync(CHARACTER_DATA_FOLDER, { recursive: true });
+fs.mkdirSync(MONSTER_DATA_FOLDER, { recursive: true });
+fs.mkdirSync(SPAWN_DATA_FOLDER, { recursive: true });
 
 // Load the monsters from the data folder
 for (const serverKey of fs.readdirSync(MONSTER_DATA_FOLDER)) {
-  const serverDatum: ServerData = {
-    characters: {},
-    monsters: {},
-  };
-  serverData.set(serverKey as ServerKey, serverDatum);
-
+  const serverDatum = getServerData(serverKey as ServerKey);
   const serverFolder = path.join(MONSTER_DATA_FOLDER, serverKey);
+
   for (const type of fs.readdirSync(serverFolder)) {
     serverDatum.monsters[type as MonsterKey] = JSON.parse(
       fs.readFileSync(path.join(serverFolder, type), "utf8"),
@@ -169,19 +250,22 @@ for (const serverKey of fs.readdirSync(MONSTER_DATA_FOLDER)) {
 }
 
 // Load the characters from the data folder
-for (const serverKey of fs.readdirSync(MONSTER_DATA_FOLDER)) {
-  let serverDatum = serverData.get(serverKey as ServerKey);
-  if (serverDatum === undefined) {
-    serverDatum = {
-      characters: {},
-      monsters: {},
-    };
-    serverData.set(serverKey as ServerKey, serverDatum);
-  }
-
+for (const serverKey of fs.readdirSync(CHARACTER_DATA_FOLDER)) {
+  const serverDatum = getServerData(serverKey as ServerKey);
   const serverFolder = path.join(CHARACTER_DATA_FOLDER, serverKey);
+
   for (const id of fs.readdirSync(serverFolder)) {
     serverDatum.characters[id] = JSON.parse(fs.readFileSync(path.join(serverFolder, id), "utf8")) as CharacterData;
+  }
+}
+
+// Load the spawns from the data folder
+for (const serverKey of fs.readdirSync(SPAWN_DATA_FOLDER)) {
+  const serverDatum = getServerData(serverKey as ServerKey);
+  const serverFolder = path.join(SPAWN_DATA_FOLDER, serverKey);
+
+  for (const type of fs.readdirSync(serverFolder)) {
+    serverDatum.spawns[type as MonsterKey] = Number.parseInt(fs.readFileSync(path.join(serverFolder, type), "utf8"));
   }
 }
 
@@ -233,6 +317,17 @@ const loop = () => {
           }
         }
         fs.writeFileSync(characterPath, JSON.stringify(character));
+      }
+
+      for (const [type, spawnTime] of Object.entries(serverDatum.spawns)) {
+        // Remove stale spawns
+        if (spawnTime < staleCutoff) {
+          delete serverDatum.spawns[type as MonsterKey];
+          continue;
+        }
+
+        // Cache the spawns
+        fs.writeFileSync(path.join(SPAWN_DATA_FOLDER, serverKey, type), spawnTime.toString());
       }
     }
   } catch (e) {
