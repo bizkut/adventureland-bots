@@ -163,16 +163,39 @@ export class Dashboard {
             }
 
             // Count events directly from the events collection for accuracy
-            const [kills, deaths, items] = await Promise.all([
+            // Also count deaths from alclient's deaths collection (which actually tracks them)
+            const [kills, dashboardDeaths, alclientDeaths, items] = await Promise.all([
                 (DashboardEventModel as any).countDocuments({ type: "kill" }),
                 (DashboardEventModel as any).countDocuments({ type: "death" }),
+                mongoose.connection.collection("deaths").countDocuments(),
                 (DashboardEventModel as any).countDocuments({ type: "loot" })
             ])
 
             this.kills = kills || 0
-            this.deaths = deaths || 0
+            this.deaths = Math.max(dashboardDeaths || 0, alclientDeaths || 0)  // Use whichever is higher
             this.itemsLooted = items || 0
             console.log(`Loaded dashboard stats: ${this.kills} kills, ${this.deaths} deaths, ${this.itemsLooted} items`)
+
+            // Sync deaths from alclient's deaths collection to dashboard_events if missing
+            if (alclientDeaths > dashboardDeaths) {
+                console.log(`Syncing ${alclientDeaths - dashboardDeaths} deaths from alclient collection...`)
+                const existingDeathTimes = new Set(
+                    (await (DashboardEventModel as any).find({ type: "death" }, { "details.time": 1 }).lean())
+                        .map((e: any) => e.details?.time)
+                )
+                const alclientDeathDocs = await mongoose.connection.collection("deaths").find().toArray()
+                for (const death of alclientDeathDocs) {
+                    if (!existingDeathTimes.has(death.time)) {
+                        await (DashboardEventModel as any).create({
+                            timestamp: new Date(death.time),
+                            type: "death",
+                            character: death.name,
+                            message: `Died to ${death.cause} in ${death.map}`,
+                            details: { cause: death.cause, map: death.map, x: death.x, y: death.y, time: death.time }
+                        }).catch(() => { })
+                    }
+                }
+            }
 
             this.dbReady = true
         } catch (e) {
@@ -221,11 +244,13 @@ export class Dashboard {
                         let result: any[] = []
 
                         if (logType === "events") {
-                            result = await this.getRecentEvents(limit, offset)
+                            result = await this.getRecentEvents(limit, offset, data.filter)
                         } else if (logType === "errors") {
                             result = await this.getRecentErrors(limit, offset)
                         } else if (logType === "goldHistory") {
                             result = await this.getGoldHistory(limit, offset)
+                        } else if (logType === "xpHistory") {
+                            result = await this.getXpHistory(limit, offset)
                         }
 
                         ws.send(JSON.stringify({
@@ -314,7 +339,8 @@ export class Dashboard {
             this.lastTotalXp = totalXp
 
             // Only save if there's an actual change
-            if (xpDelta !== 0) {
+            // Skip unrealistic deltas (>1M) which indicate bot reconnection/recalculation, not real XP gain
+            if (xpDelta !== 0 && Math.abs(xpDelta) < 1000000) {
                 (XpHistoryModel as any).create({
                     timestamp: new Date(now),
                     totalXp: totalXp,
@@ -517,11 +543,16 @@ export class Dashboard {
         })
     }
 
-    private async getRecentEvents(limit = 50, offset = 0): Promise<DashboardEvent[]> {
+    private async getRecentEvents(limit = 50, offset = 0, type?: string): Promise<DashboardEvent[]> {
         if (!this.dbReady) return []
         try {
+            const query: any = { type: { $ne: "error" } }
+            if (type && type !== "all") {
+                query.type = type
+            }
+
             const events = await (DashboardEventModel as any)
-                .find({ type: { $ne: "error" } })
+                .find(query)
                 .sort({ timestamp: -1 })
                 .skip(offset)
                 .limit(limit)
@@ -664,6 +695,8 @@ export class Dashboard {
             this.getBosses(),
             this.getRespawns()
         ])
+
+        console.log(`[Dashboard] Sending full update: ${events.length} events, ${goldHistory.length} gold, ${xpHistory.length} xp, dbReady=${this.dbReady}`)
 
         const data = {
             type: "full",

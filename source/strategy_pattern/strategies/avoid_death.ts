@@ -32,8 +32,8 @@ export class AvoidDeathStrategy<Type extends Character> implements Strategy<Type
             }
             if (!bot.couldDieToProjectiles()) return // No chance of dying
 
-            console.info(`Warping ${bot.id} to jail to avoid death (onAction)!`)
-            await bot.warpToJail().catch(console.error)
+            console.info(`Warping ${bot.id} to safety to avoid death (onAction)!`)
+            await this.safeWarpToSafety(bot)
         }
 
         bot.socket.on("action", this.onAction)
@@ -41,6 +41,21 @@ export class AvoidDeathStrategy<Type extends Character> implements Strategy<Type
 
     public onRemove(bot: Type) {
         if (this.onAction) bot.socket.removeListener("action", this.onAction)
+    }
+
+    /** Try warpToJail, fall back to smartMove if it fails */
+    private async safeWarpToSafety(bot: Type): Promise<void> {
+        try {
+            await bot.warpToJail()
+        } catch (e) {
+            // warpToJail failed (invalid coordinates), try smartMove to town
+            console.warn(`warpToJail failed for ${bot.id}, trying smartMove to town:`, e)
+            try {
+                await bot.smartMove("main")
+            } catch (e2) {
+                console.error(`smartMove also failed for ${bot.id}:`, e2)
+            }
+        }
     }
 
     protected async checkIncomingDamage(bot: Type) {
@@ -81,8 +96,8 @@ export class AvoidDeathStrategy<Type extends Character> implements Strategy<Type
             console.info(`Harakiri-ing ${bot.id} (checkIncomingDamage)!`)
             bot.socket.emit("harakiri")
         } else {
-            console.info(`Warping ${bot.id} to jail to avoid death (checkIncomingDamage)!`)
-            await bot.warpToJail()
+            console.info(`Warping ${bot.id} to safety to avoid death (checkIncomingDamage)!`)
+            await this.safeWarpToSafety(bot)
         }
     }
 }

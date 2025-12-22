@@ -48,26 +48,28 @@ A real-time web dashboard for monitoring your bots at `http://localhost/dashboar
 - **Boss Tracker**: Live boss locations with HP bars
 - **Respawn Timers**: Countdown to boss respawns
 - **Error Log**: Filtered view of errors for debugging
-- **Infinite Scroll**: Auto-load more entries when scrolling
+- **Expandable Event Details**: Click any event with ▶ to see details (damage, gold earned, party members, etc.)
+- **Activity Filters**: Filter by event type (Kills, Deaths, Level, Party, Upgrade, Server, Trade, Sell)
+- **Load More / Search Deeper**: Load historical data from MongoDB with infinite scroll or button click
 - **Real-time Updates**: All logs update live via WebSocket
 
 ### Activity Events Tracked
 
-| Event | Icon | Description |
-|-------|------|-------------|
-| Kill | ⚔️ | Monster kills with specific monster type |
-| Death | 💀 | Character deaths |
-| Level Up | 🎉 | Level progression (cooldown prevents duplicates) |
-| Party | 👥 | Party join/leave (shows who joined/left) |
-| Loot | 🎒 | Items collected |
-| Banking | 🏦 | Bank deposits/withdrawals |
-| Buy | 🛒 | Purchases from NPCs (batched display) |
-| Sell | 💵 | Merchant stand sales |
-| Upgrade | 🔧 | Upgrade/compound results |
-| Server | 🌐 | Server hops |
-| Instance | 🚪 | Dungeon/instance entries |
-| Trade | 🤝 | Trade transactions |
-| Error | ❌ | Errors and warnings |
+| Event | Icon | Description | Expandable Details |
+|-------|------|-------------|-------------------|
+| Kill | ⚔️ | Monster kills | Monster type, damage dealt |
+| Death | 💀 | Character deaths | Cause, map, position (x, y) |
+| Level Up | 🎉 | Level progression | Previous → new level |
+| Party | 👥 | Party join/leave | Full member list |
+| Loot | 🎒 | Items collected | - |
+| Banking | 🏦 | Bank deposits/withdrawals | - |
+| Buy | 🛒 | Purchases from NPCs | - |
+| Sell | 💵 | Sales to NPCs | Item name, gold earned |
+| Upgrade | 🔧 | Upgrade/compound results | Success/fail result |
+| Server | 🌐 | Server hops | From → to server |
+| Instance | 🚪 | Dungeon/instance entries | - |
+| Trade | 🤝 | Trade transactions | Trade details |
+| Error | ❌ | Errors and warnings | - |
 
 ### Persistent Storage
 

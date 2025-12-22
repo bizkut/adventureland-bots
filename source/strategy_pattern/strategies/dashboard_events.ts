@@ -14,6 +14,7 @@ export class DashboardEventStrategy implements Strategy<PingCompensatedCharacter
     private onParty: (data: any) => void
     private onGameResponse: (data: any) => void
     private onPlayer: (data: any) => void
+    private onTrade: ((data: any) => void) | undefined
 
     // Track state to avoid duplicate logs
     private lastPartyMembers: string = ""
@@ -151,16 +152,29 @@ export class DashboardEventStrategy implements Strategy<PingCompensatedCharacter
                     details: { item: data.name }
                 })
             }
+            // Bot selling to NPC
+            if (data.response === "sell_success" && data.name) {
+                dashboard.logEvent({
+                    type: "sell",
+                    character: bot.id,
+                    message: `Sold ${data.name}`,
+                    details: { item: data.name, gold: data.gold }
+                })
+            }
         }
         bot.socket.on("game_response", this.onGameResponse)
 
         // Track level ups and server hops via player updates
         this.onPlayer = (data: any) => {
-            // Level up detection - with 10 second cooldown to prevent duplicates
-            const now = Date.now()
-            if (data.level && data.level > this.lastLevel && this.lastLevel > 0) {
-                // Check cooldown (10 seconds between level-up events for same level)
-                if (now - this.lastLevelUpTime > 10_000) {
+            // Level up detection - track the actual level we last logged
+            if (data.level && data.level > 0) {
+                // Only log if this is a NEW level we haven't logged yet
+                // Use both the level check AND a cooldown for safety
+                const now = Date.now()
+                const isNewLevel = data.level > this.lastLevel && this.lastLevel > 0
+                const cooldownPassed = now - this.lastLevelUpTime > 30_000  // 30 second cooldown per bot
+
+                if (isNewLevel && cooldownPassed) {
                     const oldLevel = this.lastLevel
                     this.lastLevel = data.level
                     this.lastLevelUpTime = now
@@ -171,11 +185,11 @@ export class DashboardEventStrategy implements Strategy<PingCompensatedCharacter
                         details: { level: data.level, from: oldLevel }
                     })
                 } else {
-                    // Still update the level even if we skip logging
-                    this.lastLevel = data.level
+                    // Always update tracked level to prevent future duplicates
+                    if (data.level > this.lastLevel) {
+                        this.lastLevel = data.level
+                    }
                 }
-            } else if (data.level) {
-                this.lastLevel = data.level
             }
 
             // Server hop detection
@@ -205,6 +219,20 @@ export class DashboardEventStrategy implements Strategy<PingCompensatedCharacter
             }
         }
         bot.socket.on("player", this.onPlayer)
+
+        // Track trades with other players
+        this.onTrade = (data: any) => {
+            // data.message contains info about completed trade
+            if (data.message && data.message.includes("traded")) {
+                dashboard.logEvent({
+                    type: "trade",
+                    character: bot.id,
+                    message: data.message,
+                    details: { raw: data }
+                })
+            }
+        }
+        bot.socket.on("game_log", this.onTrade)
     }
 
     public onRemove(bot: PingCompensatedCharacter) {
@@ -214,5 +242,6 @@ export class DashboardEventStrategy implements Strategy<PingCompensatedCharacter
         if (this.onParty) bot.socket.removeListener("party_update", this.onParty)
         if (this.onGameResponse) bot.socket.removeListener("game_response", this.onGameResponse)
         if (this.onPlayer) bot.socket.removeListener("player", this.onPlayer)
+        if (this.onTrade) bot.socket.removeListener("game_log", this.onTrade)
     }
 }
