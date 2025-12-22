@@ -1,0 +1,2008 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adventure Land Bot Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #12122a;
+            --bg-card: rgba(25, 25, 50, 0.7);
+            --bg-card-hover: rgba(35, 35, 70, 0.8);
+            --border-color: rgba(120, 100, 200, 0.25);
+            --border-glow: rgba(147, 112, 219, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: #9090b0;
+            --accent-gold: #ffd700;
+            --accent-purple: #9b59b6;
+            --accent-blue: #5dade2;
+            --accent-green: #2ecc71;
+            --accent-red: #e74c3c;
+            --accent-orange: #f39c12;
+            --gradient-purple: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-blue: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-gold: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            background-image:
+                radial-gradient(ellipse at 20% 20%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(118, 75, 162, 0.15) 0%, transparent 50%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 18px 28px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 24px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 1.6em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--gradient-purple);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header h1::before {
+            content: "🎮";
+            -webkit-text-fill-color: initial;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            border-radius: 25px;
+            background: rgba(0, 0, 0, 0.4);
+            font-size: 0.9em;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            box-shadow: 0 0 10px var(--accent-red);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.7;
+                transform: scale(0.95);
+            }
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tab {
+            padding: 14px 28px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1em;
+            font-weight: 600;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+        }
+
+        .tab:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-glow);
+            transform: translateY(-2px);
+        }
+
+        .tab.active {
+            background: var(--gradient-purple);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 900px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--gradient-purple);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--border-glow);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.2);
+        }
+
+        .stat-card .icon {
+            font-size: 1.5em;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .stat-card .value {
+            font-size: 2.2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .dual-value {
+            font-size: 1.4em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .stat-card .dual-value .positive {
+            color: #2ecc71;
+        }
+
+        .stat-card .dual-value .negative {
+            color: #e74c3c;
+        }
+
+        .stat-card .dual-value .separator {
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        .stat-card.gold .value {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .stat-card.xp .value {
+            background: linear-gradient(135deg, #a855f7, #6366f1);
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+
+        .stat-card .rate {
+            font-size: 0.85em;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        .stat-card .rate.positive {
+            color: var(--accent-green);
+        }
+
+        .stat-card .rate.negative {
+            color: var(--accent-red);
+        }
+
+        /* Live View Container */
+        .live-view-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 28px;
+            height: 400px;
+        }
+
+        .live-view-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Compact Character Stats */
+        .characters-compact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .character-compact {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .character-compact .name {
+            font-weight: 600;
+            font-size: 0.95em;
+        }
+
+        .character-compact .class-badge {
+            font-size: 0.7em;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+        }
+
+        .character-compact .class-badge.mage {
+            background: rgba(52, 152, 219, 0.3);
+            color: #5dade2;
+        }
+
+        .character-compact .class-badge.priest {
+            background: rgba(46, 204, 113, 0.3);
+            color: #58d68d;
+        }
+
+        .character-compact .class-badge.warrior {
+            background: rgba(231, 76, 60, 0.3);
+            color: #ec7063;
+        }
+
+        .character-compact .class-badge.ranger {
+            background: rgba(243, 156, 18, 0.3);
+            color: #f5b041;
+        }
+
+        .character-compact .class-badge.merchant {
+            background: rgba(255, 215, 0, 0.3);
+            color: #ffd700;
+        }
+
+        .character-compact .class-badge.paladin {
+            background: rgba(155, 89, 182, 0.3);
+            color: #bb8fce;
+        }
+
+        .character-compact .class-badge.rogue {
+            background: rgba(52, 73, 94, 0.5);
+            color: #85929e;
+        }
+
+        .character-compact .stats {
+            margin-left: auto;
+            display: flex;
+            gap: 16px;
+            font-size: 0.85em;
+        }
+
+        .character-compact .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .character-compact .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.75em;
+        }
+
+        .character-compact .stat-value {
+            font-weight: 600;
+        }
+
+        /* Character Cards (legacy) */
+        .characters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .character-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s ease;
+        }
+
+        .character-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+        }
+
+        .character-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .character-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--border-color);
+        }
+
+        .character-avatar img {
+            width: 48px;
+            height: 48px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        .character-avatar.fallback {
+            font-size: 28px;
+        }
+
+        .character-avatar.mage {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+
+        .character-avatar.priest {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+        }
+
+        .character-avatar.warrior {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+        }
+
+        .character-avatar.ranger {
+            background: linear-gradient(135deg, #f39c12, #d68910);
+        }
+
+        .character-avatar.merchant {
+            background: linear-gradient(135deg, #ffd700, #ffaa00);
+        }
+
+        .character-avatar.paladin {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        }
+
+        .character-avatar.rogue {
+            background: linear-gradient(135deg, #34495e, #2c3e50);
+        }
+
+        .character-info-header {
+            flex: 1;
+        }
+
+        .character-name {
+            font-size: 1.25em;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .character-class-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .character-class-badge.mage {
+            background: rgba(52, 152, 219, 0.3);
+            color: #5dade2;
+        }
+
+        .character-class-badge.priest {
+            background: rgba(46, 204, 113, 0.3);
+            color: #58d68d;
+        }
+
+        .character-class-badge.warrior {
+            background: rgba(231, 76, 60, 0.3);
+            color: #ec7063;
+        }
+
+        .character-class-badge.ranger {
+            background: rgba(243, 156, 18, 0.3);
+            color: #f5b041;
+        }
+
+        .character-class-badge.merchant {
+            background: rgba(255, 215, 0, 0.3);
+            color: #ffd700;
+        }
+
+        .character-class-badge.paladin {
+            background: rgba(155, 89, 182, 0.3);
+            color: #bb8fce;
+        }
+
+        .character-class-badge.rogue {
+            background: rgba(52, 73, 94, 0.5);
+            color: #85929e;
+        }
+
+        .health-bar-container {
+            margin-bottom: 16px;
+        }
+
+        .health-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8em;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+
+        .health-bar {
+            height: 24px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .health-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ecc71, #27ae60);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+        }
+
+        .health-bar-fill.low {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+        }
+
+        .health-bar-fill.medium {
+            background: linear-gradient(90deg, #f39c12, #d68910);
+        }
+
+        /* XP Bar */
+        .xp-bar-container {
+            margin-top: 8px;
+        }
+
+        .xp-bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .xp-bar {
+            height: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .xp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #9b59b6, #8e44ad);
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+        }
+
+        .character-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 0.9em;
+        }
+
+        .character-stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .character-stat-label {
+            color: var(--text-secondary);
+            font-size: 0.8em;
+            margin-bottom: 2px;
+        }
+
+        .character-stat-value {
+            font-weight: 600;
+        }
+
+        /* Log Tabs */
+        .log-tabs-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+        }
+
+        .log-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .log-tab {
+            flex: 1;
+            padding: 14px 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .log-tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+
+        .log-tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+            background: rgba(108, 92, 231, 0.1);
+        }
+
+        .log-tab-content {
+            display: none;
+            padding: 0;
+        }
+
+        .log-tab-content.active {
+            display: block;
+        }
+
+        .log-tab-content .activity-log {
+            border: none;
+            border-radius: 0;
+            background: transparent;
+        }
+
+        /* Activity Log */
+        .activity-log {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(20px);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .log-header h3 {
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .log-filter {
+            padding: 8px 16px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s ease;
+        }
+
+        .log-filter:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--border-glow);
+        }
+
+        .activity-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.2s ease;
+            opacity: 0.5;
+        }
+
+        .filter-btn:hover {
+            background: rgba(102, 126, 234, 0.2);
+            border-color: var(--border-glow);
+        }
+
+        .filter-btn.active {
+            opacity: 1;
+            background: rgba(102, 126, 234, 0.3);
+            border-color: var(--border-glow);
+            color: var(--text-primary);
+        }
+
+        /* Gold Timeline Styles */
+        .gold-entry {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .gold-entry:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .gold-total {
+            font-weight: 600;
+            color: #ffd700;
+            min-width: 120px;
+        }
+
+        .gold-delta {
+            font-weight: 700;
+            min-width: 80px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .gold-positive {
+            color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .gold-negative {
+            color: #f87171;
+            background: rgba(248, 113, 113, 0.1);
+        }
+
+        .gold-neutral {
+            color: var(--text-secondary);
+        }
+
+        .gold-events {
+            flex-basis: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }
+
+        .gold-event {
+            font-size: 0.8em;
+            padding: 2px 8px;
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 12px;
+            color: var(--text-secondary);
+        }
+
+        .log-hint {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .log-entry {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .log-entry:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .log-time {
+            color: var(--text-secondary);
+            font-size: 0.8em;
+            min-width: 65px;
+            font-family: 'Menlo', monospace;
+        }
+
+        .log-icon {
+            font-size: 1.2em;
+            width: 28px;
+            text-align: center;
+        }
+
+        .log-message {
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .log-character {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        /* Boss Tracker & Respawn Timers */
+        .boss-respawn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .boss-respawn-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .boss-tracker,
+        .respawn-timers {
+            min-width: 0;
+        }
+
+        .boss-item,
+        .respawn-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .boss-item:hover,
+        .respawn-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .boss-icon,
+        .respawn-icon {
+            font-size: 1.5em;
+        }
+
+        .boss-info,
+        .respawn-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .boss-name,
+        .respawn-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: capitalize;
+        }
+
+        .boss-location,
+        .respawn-server {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+        }
+
+        .boss-hp-bar {
+            width: 80px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .boss-hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ef4444, #f97316);
+            transition: width 0.3s ease;
+        }
+
+        .respawn-countdown {
+            font-family: 'Menlo', monospace;
+            font-size: 1.1em;
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        .respawn-countdown.expired {
+            color: var(--accent-purple);
+        }
+
+        /* Bottom Stats */
+        .bottom-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-top: 28px;
+        }
+
+        @media (max-width: 700px) {
+            .bottom-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .bottom-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .bottom-stat .value {
+            font-size: 1.8em;
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        .bottom-stat .label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            font-weight: 500;
+        }
+
+        /* Error Tab Styles */
+        .error-summary {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .error-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 16px 24px;
+            font-weight: 600;
+        }
+
+        .error-entry {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--accent-red);
+            margin-bottom: 12px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .error-entry.warning {
+            background: rgba(243, 156, 18, 0.1);
+            border-left-color: var(--accent-orange);
+        }
+
+        .error-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .error-header:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .error-details {
+            padding: 0 18px 14px;
+            font-family: 'Menlo', monospace;
+            font-size: 0.8em;
+            color: var(--text-secondary);
+            display: none;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .error-entry.expanded .error-details {
+            display: block;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-secondary);
+            font-size: 1.1em;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.4);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(102, 126, 234, 0.6);
+        }
+
+        /* Class icons mapping */
+        .class-icon {
+            font-size: 24px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>Adventure Land Bot Dashboard</h1>
+        <div class="connection-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Connecting...</span>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab" data-tab="errors">⚠️ Errors <span id="errorCount"></span></button>
+    </div>
+
+    <!-- Dashboard Tab -->
+    <div id="dashboard" class="tab-content active">
+        <!-- Overview Stats -->
+        <div class="section-title">💰 Overview</div>
+        <div class="stats-grid four-col">
+            <div class="stat-card gold">
+                <div class="icon">💰</div>
+                <div class="label">Total Gold</div>
+                <div class="value" id="totalGold">0</div>
+            </div>
+            <div class="stat-card gold">
+                <div class="icon">🏦</div>
+                <div class="label">Bank Gold</div>
+                <div class="value" id="bankGold">0</div>
+            </div>
+            <div class="stat-card gold">
+                <div class="icon">💹</div>
+                <div class="label">Gold/Hour</div>
+                <div class="dual-value">
+                    <span class="positive" id="goldGainedPerHour">+0</span>
+                    <span class="separator">/</span>
+                    <span class="negative" id="goldSpentPerHour">-0</span>
+                </div>
+            </div>
+            <div class="stat-card xp">
+                <div class="icon">⭐</div>
+                <div class="label">XP/Hour</div>
+                <div class="value" id="xpPerHour">0</div>
+            </div>
+        </div>
+
+        <!-- Characters with Sprites -->
+        <div class="section-title">👥 Characters</div>
+        <div class="characters-grid" id="charactersGrid">
+            <div class="no-data">Waiting for character data...</div>
+        </div>
+
+        <!-- Tabbed Log Section -->
+        <div class="log-tabs-container">
+            <div class="log-tabs">
+                <button class="log-tab active" data-tab="activity" onclick="switchLogTab('activity')">📜
+                    Activity</button>
+                <button class="log-tab" data-tab="gold" onclick="switchLogTab('gold')">💰 Gold</button>
+                <button class="log-tab" data-tab="xp" onclick="switchLogTab('xp')">⭐ XP</button>
+            </div>
+
+            <!-- Activity Tab Content -->
+            <div class="log-tab-content active" id="activityTabContent">
+                <div class="activity-log">
+                    <div class="log-header">
+                        <h3>Recent Activity</h3>
+                        <button class="log-filter" onclick="clearLogs()">Clear</button>
+                    </div>
+                    <div class="activity-filters">
+                        <button class="filter-btn active" data-type="all" onclick="toggleFilter('all')">All</button>
+                        <button class="filter-btn active" data-type="kill" onclick="toggleFilter('kill')">⚔️
+                            Kills</button>
+                        <button class="filter-btn active" data-type="party" onclick="toggleFilter('party')">👥
+                            Party</button>
+                        <button class="filter-btn active" data-type="death" onclick="toggleFilter('death')">💀
+                            Deaths</button>
+                        <button class="filter-btn active" data-type="levelup" onclick="toggleFilter('levelup')">🎉
+                            Level</button>
+                        <button class="filter-btn active" data-type="upgrade" onclick="toggleFilter('upgrade')">🔧
+                            Upgrade</button>
+                        <button class="filter-btn active" data-type="server" onclick="toggleFilter('server')">🌐
+                            Server</button>
+                        <button class="filter-btn active" data-type="trade" onclick="toggleFilter('trade')">🤝
+                            Trade</button>
+                        <button class="filter-btn active" data-type="sell" onclick="toggleFilter('sell')">💵
+                            Sell</button>
+                    </div>
+                    <div id="activityLog">
+                        <div class="no-data">No activity yet...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gold Tab Content -->
+            <div class="log-tab-content" id="goldTabContent">
+                <div class="activity-log">
+                    <div class="log-header">
+                        <h3>Gold History</h3>
+                        <span class="log-hint">Changes tracked in real-time</span>
+                    </div>
+                    <div id="goldTimeline">
+                        <div class="no-data">No gold history yet...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- XP Tab Content -->
+            <div class="log-tab-content" id="xpTabContent">
+                <div class="activity-log">
+                    <div class="log-header">
+                        <h3>XP History</h3>
+                        <span class="log-hint">XP gains from kills</span>
+                    </div>
+                    <div id="xpTimeline">
+                        <div class="no-data">No XP history yet...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Boss Tracker & Respawn Timers Row -->
+        <div class="boss-respawn-row">
+            <!-- Boss Tracker -->
+            <div class="boss-tracker">
+                <div class="section-title">🎯 Boss Tracker</div>
+                <div class="activity-log">
+                    <div class="log-header">
+                        <h3>Live Bosses</h3>
+                        <span class="log-hint">Special monsters</span>
+                    </div>
+                    <div id="bossTracker">
+                        <div class="no-data">No bosses tracked...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Respawn Timers -->
+            <div class="respawn-timers">
+                <div class="section-title">⏰ Respawn Timers</div>
+                <div class="activity-log">
+                    <div class="log-header">
+                        <h3>Upcoming Spawns</h3>
+                        <span class="log-hint">Estimated times</span>
+                    </div>
+                    <div id="respawnTimers">
+                        <div class="no-data">No respawns tracked...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Stats -->
+        <div class="section-title">📈 Stats (Session)</div>
+        <div class="bottom-stats">
+            <div class="bottom-stat">
+                <div class="value" id="killCount">0</div>
+                <div class="label">⚔️ Kills</div>
+            </div>
+            <div class="bottom-stat">
+                <div class="value" id="deathCount">0</div>
+                <div class="label">💀 Deaths</div>
+            </div>
+            <div class="bottom-stat">
+                <div class="value" id="itemCount">0</div>
+                <div class="label">🎒 Items</div>
+            </div>
+            <div class="bottom-stat">
+                <div class="value" id="uptime">0:00:00</div>
+                <div class="label">⏱️ Uptime</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Errors Tab -->
+    <div id="errors" class="tab-content">
+        <div class="error-summary">
+            <div class="error-stat">
+                <strong id="totalErrors">0</strong> Total Errors
+            </div>
+            <button class="log-filter" onclick="clearErrors()">Clear All</button>
+        </div>
+        <div class="activity-log" id="errorLog">
+            <div class="no-data">No errors recorded. ✨</div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let events = [];
+        let errors = [];
+        let reconnectAttempts = 0;
+
+        const CLASS_ICONS = {
+            mage: "🧙",
+            priest: "⛪",
+            warrior: "⚔️",
+            ranger: "🏹",
+            merchant: "💰",
+            paladin: "🛡️",
+            rogue: "🗡️"
+        };
+
+        const EVENT_ICONS = {
+            item_transfer: "📦",
+            gold_transfer: "💰",
+            party: "👥",
+            death: "💀",
+            levelup: "🎉",
+            loot: "🎒",
+            kill: "⚔️",
+            banking: "🏦",
+            error: "❌",
+            upgrade: "🔧",
+            server: "🌐",
+            instance: "🚪",
+            trade: "🤝",
+            sell: "💵",
+            buy: "🛒"
+        };
+
+        // Activity filter state
+        const activeFilters = {
+            kill: true,
+            party: true,
+            death: true,
+            loot: true,
+            levelup: true,
+            banking: true,
+            gold_transfer: true,
+            item_transfer: true,
+            upgrade: true,
+            server: true,
+            instance: true,
+            trade: true,
+            sell: true,
+            buy: true
+        };
+
+        function toggleFilter(type) {
+            if (type === 'all') {
+                // Toggle all filters
+                const allActive = Object.values(activeFilters).every(v => v);
+                Object.keys(activeFilters).forEach(key => activeFilters[key] = !allActive);
+                // Update all button states
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.toggle('active', !allActive);
+                });
+            } else {
+                // Toggle single filter
+                activeFilters[type] = !activeFilters[type];
+                const btn = document.querySelector(`.filter-btn[data-type="${type}"]`);
+                btn.classList.toggle('active', activeFilters[type]);
+                // Update "All" button
+                const allActive = Object.values(activeFilters).every(v => v);
+                document.querySelector('.filter-btn[data-type="all"]').classList.toggle('active', allActive);
+            }
+            renderEvents();
+        }
+
+        function connect() {
+            const wsUrl = `ws://${window.location.host}/ws`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById("statusDot").classList.add("connected");
+                document.getElementById("statusText").textContent = "Connected";
+                reconnectAttempts = 0;
+            };
+
+            ws.onclose = () => {
+                document.getElementById("statusDot").classList.remove("connected");
+                document.getElementById("statusText").textContent = "Disconnected";
+                setTimeout(reconnect, 2000);
+            };
+
+            ws.onerror = () => {
+                console.error("WebSocket error");
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleMessage(data);
+            };
+        }
+
+        function reconnect() {
+            reconnectAttempts++;
+            document.getElementById("statusText").textContent = `Reconnecting... (${reconnectAttempts})`;
+            connect();
+        }
+
+        function handleMessage(data) {
+            switch (data.type) {
+                case "full":
+                    updateCharacters(data.characters);
+                    updateStats(data.stats);
+                    events = data.events || [];
+                    errors = data.errors || [];
+                    goldHistory = data.goldHistory || [];
+                    xpHistory = data.xpHistory || [];
+                    bosses = data.bosses || [];
+                    respawns = data.respawns || [];
+                    renderEvents();
+                    renderErrors();
+                    renderGoldTimeline();
+                    renderXpTimeline();
+                    renderBosses();
+                    renderRespawns();
+                    break;
+                case "update":
+                    updateCharacters(data.characters);
+                    updateStats(data.stats);
+                    break;
+                case "event":
+                    if (data.data.type === "error") {
+                        errors.unshift(data.data);
+                        if (errors.length > 100) errors.pop();
+                        renderErrors();
+                    } else {
+                        events.unshift(data.data);
+                        if (events.length > 100) events.pop();
+                        renderEvents();
+                    }
+                    break;
+                case "moreData":
+                    // Append data to existing arrays
+                    if (data.logType === "events") {
+                        events = events.concat(data.data);
+                        loadingMore.events = false;
+                        hasMore.events = data.hasMore;
+                        renderEvents(true);
+                    } else if (data.logType === "errors") {
+                        errors = errors.concat(data.data);
+                        loadingMore.errors = false;
+                        hasMore.errors = data.hasMore;
+                        renderErrors(true);
+                    } else if (data.logType === "goldHistory") {
+                        goldHistory = goldHistory.concat(data.data);
+                        loadingMore.goldHistory = false;
+                        hasMore.goldHistory = data.hasMore;
+                        renderGoldTimeline(true);
+                    }
+                    break;
+                case "goldEntry":
+                    // New gold entry from backend - add to beginning of list
+                    goldHistory.unshift(data.data);
+                    if (goldHistory.length > 100) goldHistory.pop();
+                    renderGoldTimeline();
+                    break;
+                case "xpEntry":
+                    // New XP entry from backend - add to beginning of list
+                    xpHistory.unshift(data.data);
+                    if (xpHistory.length > 100) xpHistory.pop();
+                    renderXpTimeline();
+                    break;
+            }
+        }
+
+        // Pagination state
+        const loadingMore = { events: false, errors: false, goldHistory: false };
+        const hasMore = { events: true, errors: true, goldHistory: true };
+
+        function loadMore(logType) {
+            if (loadingMore[logType] || !hasMore[logType] || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+            loadingMore[logType] = true;
+            const currentLength = logType === "events" ? events.length
+                : logType === "errors" ? errors.length
+                    : goldHistory.length;
+
+            ws.send(JSON.stringify({
+                type: "loadMore",
+                logType: logType,
+                offset: currentLength,
+                limit: 50
+            }));
+        }
+
+        function setupScrollListeners() {
+            // Activity Log scroll
+            const activityLog = document.getElementById("activityLog");
+            activityLog.addEventListener("scroll", () => {
+                if (activityLog.scrollTop + activityLog.clientHeight >= activityLog.scrollHeight - 50) {
+                    loadMore("events");
+                }
+            });
+
+            // Gold Timeline scroll
+            const goldTimeline = document.getElementById("goldTimeline");
+            goldTimeline.addEventListener("scroll", () => {
+                if (goldTimeline.scrollTop + goldTimeline.clientHeight >= goldTimeline.scrollHeight - 50) {
+                    loadMore("goldHistory");
+                }
+            });
+
+            // Error Log scroll
+            const errorLog = document.getElementById("errorLog");
+            errorLog.addEventListener("scroll", () => {
+                if (errorLog.scrollTop + errorLog.clientHeight >= errorLog.scrollHeight - 50) {
+                    loadMore("errors");
+                }
+            });
+        }
+
+        // Initialize scroll listeners when page loads
+        document.addEventListener("DOMContentLoaded", setupScrollListeners);
+
+        function formatNumber(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + "B";
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + "M";
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + "K";
+            return num.toLocaleString();
+        }
+
+        function formatTime(ms) {
+            const seconds = Math.floor(ms / 1000);
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hours}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+        }
+
+        function updateStats(stats) {
+            document.getElementById("totalGold").textContent = formatNumber(stats.totalGold);
+            document.getElementById("bankGold").textContent = formatNumber(stats.bankGold);
+            document.getElementById("goldGainedPerHour").textContent = "+" + formatNumber(stats.goldGainedPerHour);
+            document.getElementById("goldSpentPerHour").textContent = "-" + formatNumber(stats.goldSpentPerHour);
+            document.getElementById("xpPerHour").textContent = formatNumber(stats.xpPerHour);
+            document.getElementById("killCount").textContent = stats.kills.toLocaleString();
+            document.getElementById("deathCount").textContent = stats.deaths.toLocaleString();
+            document.getElementById("itemCount").textContent = stats.items.toLocaleString();
+            document.getElementById("uptime").textContent = formatTime(stats.uptime);
+        }
+
+        function updateCharacters(characters) {
+            const grid = document.getElementById("charactersGrid");
+
+            if (!characters || characters.length === 0) {
+                grid.innerHTML = '<div class="no-data">No characters connected</div>';
+                return;
+            }
+
+            // Sprite sheet constants (from analysis)
+            const FRAME_WIDTH = 27;
+            const FRAME_HEIGHT = 36;
+            const FRAMES_PER_CHAR_X = 3; // 3 animation frames per character
+            const FRAMES_PER_CHAR_Y = 4; // 4 directions per character
+            const CHARS_PER_ROW = 4;     // a-d = top row, e-h = bottom row
+
+            grid.innerHTML = characters.map(char => {
+                const hpPercent = Math.round((char.hp / char.maxHp) * 100);
+                let hpClass = "";
+                if (hpPercent < 30) hpClass = "low";
+                else if (hpPercent < 60) hpClass = "medium";
+
+                // Calculate sprite position from skin name (e.g., "mbody5f")
+                let spriteHtml = CLASS_ICONS[char.type] || "👤";
+
+                // Get base position from character skin (e.g., "marmor12b" -> "b")
+                const skinMatch = char.skin?.match(/^(.+?)([a-h])$/);
+                const basePosition = skinMatch ? skinMatch[2] : 'a';
+                const baseCharPos = basePosition.charCodeAt(0) - 97; // 0-7
+
+                // Sprite sheet constants from server source (288×324 sheets)
+                // Each sheet has 8 characters (4 cols × 2 rows)
+                // Each character has 12 frames (3 cols × 4 dirs)
+                const CHARS_PER_ROW = 4;
+                const FRAME_W = 27;
+                const FRAME_H = 36;
+                const CHAR_BLOCK_W = FRAME_W * 3;  // 81px per character
+                const CHAR_BLOCK_H = FRAME_H * 4;  // 144px per character
+
+                // Helper function to create armor/body sprite layer
+                const createArmorLayer = (spriteName, zIndex = 0) => {
+                    if (!spriteName) return '';
+                    const match = spriteName.match(/^(.+?)([a-h])$/);
+                    if (!match) return '';
+
+                    const sheet = match[1];
+                    const charPos = match[2].charCodeAt(0) - 97;
+                    const charCol = charPos % CHARS_PER_ROW;
+                    const charRow = Math.floor(charPos / CHARS_PER_ROW);
+
+                    // Calculate frame position (use middle frame of first direction)
+                    const frameX = (charCol * CHAR_BLOCK_W) + FRAME_W; // middle frame
+                    const frameY = charRow * CHAR_BLOCK_H; // first direction (down-facing)
+
+                    return `<div style="
+                        position: absolute;
+                        background-image: url('http://localhost:8080/images/cosmetics/armors/${sheet}.png');
+                        background-position: -${frameX}px -${frameY}px;
+                        width: ${FRAME_W}px;
+                        height: ${FRAME_H}px;
+                        z-index: ${zIndex};
+                        image-rendering: pixelated;
+                    "></div>`;
+                };
+
+                // Helper to create base skin layer (body without head)
+                const createBaseSkinLayer = () => {
+                    if (!char.skin) return '';
+                    const prefix = char.skin[0];
+                    let baseSkin;
+                    if (prefix === 'm') baseSkin = 'mskin1';
+                    else if (prefix === 's') baseSkin = 'sskin1';
+                    else if (prefix === 'l') baseSkin = 'lskin1';
+                    else baseSkin = 'mskin1';
+
+                    const charCol = baseCharPos % CHARS_PER_ROW;
+                    const charRow = Math.floor(baseCharPos / CHARS_PER_ROW);
+                    const frameX = (charCol * CHAR_BLOCK_W) + FRAME_W;
+                    const frameY = charRow * CHAR_BLOCK_H;
+
+                    return `<div style="
+                        position: absolute;
+                        background-image: url('http://localhost:8080/images/cosmetics/skins/${baseSkin}.png');
+                        background-position: -${frameX}px -${frameY}px;
+                        width: ${FRAME_W}px;
+                        height: ${FRAME_H}px;
+                        z-index: -1;
+                        image-rendering: pixelated;
+                    "></div>`;
+                };
+
+                // Helper to create head sprite layer (120px height sheets, 30px per direction)
+                const createHeadLayer = (headName, zIndex = 1) => {
+                    if (!headName) return '';
+
+                    // Parse head name: fmakeup01, makeup117, mmakeup05, etc.
+                    let sheet, headIndex = 0;
+
+                    if (headName.startsWith('fmakeup')) {
+                        sheet = 'fmakeup';
+                        headIndex = parseInt(headName.replace('fmakeup', '')) || 1;
+                    } else if (headName.startsWith('mmakeup')) {
+                        sheet = 'malemakeup';
+                        headIndex = parseInt(headName.replace('mmakeup', '')) || 1;
+                    } else if (headName.startsWith('smakeup')) {
+                        sheet = 'smakeup';
+                        headIndex = parseInt(headName.replace('smakeup', '')) || 1;
+                    } else if (headName.startsWith('makeup')) {
+                        sheet = 'makeup1';
+                        headIndex = parseInt(headName.replace('makeup', '')) || 100;
+                        headIndex = headIndex - 99; // makeup100 -> index 1, makeup117 -> index 18
+                    } else {
+                        return ''; // Unknown head type
+                    }
+
+                    // Head sheets: 27px per head, 30px per direction (4 directions = 120px height)
+                    const frameX = (headIndex - 1) * FRAME_W;
+                    const frameY = 0; // first direction (down-facing)
+
+                    return `<div style="
+                        position: absolute;
+                        background-image: url('http://localhost:8080/images/cosmetics/makeup/${sheet}.png');
+                        background-position: -${frameX}px -${frameY}px;
+                        width: ${FRAME_W}px;
+                        height: 30px;
+                        z-index: ${zIndex};
+                        image-rendering: pixelated;
+                        top: 0px;
+                    "></div>`;
+                };
+
+                // Helper for hair layer 
+                // Hair sheets: hairdo1-6.png, each 675×120 (25 styles, 4 directions)
+                const createHairLayer = (hairName, zIndex = 3) => {
+                    if (!hairName) return '';
+
+                    // Parse hair name: hairdo520 -> sheet 5, style 20
+                    const hairNum = parseInt(hairName.replace('hairdo', '')) || 100;
+                    const sheetNum = Math.floor(hairNum / 100);  // hairdo520 -> 5
+                    const styleIndex = hairNum % 100;             // hairdo520 -> style 20 (0-indexed in sheet)
+
+                    const frameX = styleIndex * FRAME_W;
+                    const frameY = 0; // first direction
+
+                    return `<div style="
+                        position: absolute;
+                        background-image: url('http://localhost:8080/images/cosmetics/hairdo/hairdo${sheetNum}.png');
+                        background-position: -${frameX}px -${frameY}px;
+                        width: ${FRAME_W}px;
+                        height: 30px;
+                        z-index: ${zIndex};
+                        image-rendering: pixelated;
+                        top: 0px;
+                    "></div>`;
+                };
+
+                if (char.skin) {
+                    // Build layered sprite
+                    // Layer order (back to front): base skin -> head -> armor -> hair
+                    // Head goes behind armor so hooded body sprites can cover faces
+                    const layers = [];
+                    layers.push(createBaseSkinLayer());
+                    if (char.cx?.head) layers.push(createHeadLayer(char.cx.head, -0.5));
+                    layers.push(createArmorLayer(char.skin, 0));
+                    if (char.cx?.hair) layers.push(createHairLayer(char.cx.hair, 3));
+
+                    if (layers.some(l => l)) {
+                        spriteHtml = `
+                            <div class="sprite-avatar" style="
+                                position: relative;
+                                width: ${FRAME_W}px;
+                                height: ${FRAME_H}px;
+                                transform: scale(2.5);
+                                overflow: visible;
+                            ">${layers.join('')}</div>`;
+                    }
+                }
+
+                return `
+                    <div class="character-card">
+                        <div class="character-header">
+                            <div class="character-avatar ${char.type}">
+                                ${spriteHtml}
+                            </div>
+                            <div class="character-info-header">
+                                <div class="character-name">${char.name}</div>
+                                <span class="character-class-badge ${char.type}">${char.type}</span>
+                            </div>
+                        </div>
+                            <div class="health-bar-container">
+                            <div class="health-bar-label">
+                                <span>HP</span>
+                                <span>${char.hp.toLocaleString()} / ${char.maxHp.toLocaleString()}</span>
+                            </div>
+                            <div class="health-bar">
+                                <div class="health-bar-fill ${hpClass}" style="width: ${hpPercent}%">
+                                    ${hpPercent}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="xp-bar-container">
+                            <div class="xp-bar-label">
+                                <span>XP</span>
+                                <span>${char.xp?.toLocaleString() ?? 0} / ${char.maxXp?.toLocaleString() ?? '?'}</span>
+                            </div>
+                            <div class="xp-bar">
+                                <div class="xp-bar-fill" style="width: ${char.maxXp ? Math.min(100, Math.round((char.xp / char.maxXp) * 100)) : 0}%">
+                                    ${char.maxXp ? Math.min(100, Math.round((char.xp / char.maxXp) * 100)) : 0}%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="character-stats">
+                            <div class="character-stat">
+                                <span class="character-stat-label">Level</span>
+                                <span class="character-stat-value">${char.level}</span>
+                            </div>
+                            <div class="character-stat">
+                                <span class="character-stat-label">Gold</span>
+                                <span class="character-stat-value">${formatNumber(char.gold)}</span>
+                            </div>
+                            <div class="character-stat">
+                                <span class="character-stat-label">Location</span>
+                                <span class="character-stat-value">${char.map}</span>
+                            </div>
+                            <div class="character-stat">
+                                <span class="character-stat-label">Server</span>
+                                <span class="character-stat-value">${char.server || "N/A"}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function batchBuyEvents(eventList) {
+            const batched = [];
+            let i = 0;
+
+            while (i < eventList.length) {
+                const event = eventList[i];
+
+                // Only batch buy events
+                if (event.type === 'buy' && event.details?.item) {
+                    const item = event.details.item;
+                    const char = event.character;
+                    let count = 1;
+                    let j = i + 1;
+
+                    // Look ahead for more buys of same item within 5 seconds
+                    while (j < eventList.length) {
+                        const next = eventList[j];
+                        if (next.type === 'buy' &&
+                            next.details?.item === item &&
+                            next.character === char &&
+                            Math.abs(next.timestamp - event.timestamp) < 5000) {
+                            count++;
+                            j++;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    // Create batched event
+                    const countStr = count > 1 ? `${count}x ` : '';
+                    batched.push({
+                        ...event,
+                        message: `Bought ${countStr}${item}`,
+                        _batched: count
+                    });
+                    i = j; // Skip the batched events
+                } else {
+                    batched.push(event);
+                    i++;
+                }
+            }
+            return batched;
+        }
+
+        function renderEvents() {
+            const log = document.getElementById("activityLog");
+
+            // Filter events based on activeFilters
+            const filteredEvents = events.filter(event => activeFilters[event.type] !== false);
+
+            if (filteredEvents.length === 0) {
+                log.innerHTML = '<div class="no-data">No activity matching filters...</div>';
+                return;
+            }
+
+            // Batch consecutive buy events for display
+            const displayEvents = batchBuyEvents(filteredEvents);
+
+            log.innerHTML = displayEvents.slice(0, 50).map(event => {
+                const time = new Date(event.timestamp).toLocaleTimeString();
+                const icon = EVENT_ICONS[event.type] || "📝";
+                return `
+                    <div class="log-entry">
+                        <span class="log-time">${time}</span>
+                        <span class="log-icon">${icon}</span>
+                        <span class="log-message">
+                            <span class="log-character">[${event.character}]</span>
+                            ${event.message}
+                        </span>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderErrors() {
+            const log = document.getElementById("errorLog");
+            document.getElementById("totalErrors").textContent = errors.length;
+            document.getElementById("errorCount").textContent = errors.length > 0 ? `(${errors.length})` : "";
+
+            if (errors.length === 0) {
+                log.innerHTML = '<div class="no-data">No errors recorded. ✨</div>';
+                return;
+            }
+
+            log.innerHTML = errors.slice(0, 50).map((error, index) => {
+                const time = new Date(error.timestamp).toLocaleTimeString();
+                const details = error.details ? JSON.stringify(error.details, null, 2) : "";
+                return `
+                    <div class="error-entry" onclick="toggleError(this)">
+                        <div class="error-header">
+                            <span>
+                                ❌ <span class="log-time">${time}</span>
+                                <strong>[${error.character}]</strong>
+                                ${error.message}
+                            </span>
+                            <span>▶</span>
+                        </div>
+                        <div class="error-details"><pre>${details}</pre></div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        let goldHistory = [];
+
+        function renderGoldTimeline() {
+            const timeline = document.getElementById("goldTimeline");
+
+            if (goldHistory.length === 0) {
+                timeline.innerHTML = '<div class="no-data">No gold history yet...</div>';
+                return;
+            }
+
+            timeline.innerHTML = goldHistory.slice(0, 50).map(entry => {
+                const time = new Date(entry.timestamp).toLocaleTimeString();
+                const date = new Date(entry.timestamp).toLocaleDateString();
+                const total = (entry.totalGold + entry.bankGold).toLocaleString();
+                const delta = entry.delta;
+                const deltaClass = delta > 0 ? "gold-positive" : delta < 0 ? "gold-negative" : "gold-neutral";
+                const deltaSign = delta > 0 ? "+" : "";
+                const deltaText = delta !== 0 ? `${deltaSign}${delta.toLocaleString()}` : "—";
+
+                // Show associated events
+                const eventsHtml = entry.events && entry.events.length > 0
+                    ? `<div class="gold-events">${entry.events.map(e =>
+                        `<span class="gold-event">${e.message}</span>`
+                    ).join("")}</div>`
+                    : "";
+
+                return `
+                    <div class="gold-entry">
+                        <span class="log-time">${time}</span>
+                        <span class="gold-total">💰 ${total}</span>
+                        <span class="gold-delta ${deltaClass}">${deltaText}</span>
+                        ${eventsHtml}
+                    </div>
+                `;
+            }).join("");
+        }
+
+        let xpHistory = [];
+
+        function renderXpTimeline() {
+            const timeline = document.getElementById("xpTimeline");
+
+            if (xpHistory.length === 0) {
+                timeline.innerHTML = '<div class="no-data">No XP history yet...</div>';
+                return;
+            }
+
+            timeline.innerHTML = xpHistory.slice(0, 50).map(entry => {
+                const time = new Date(entry.timestamp).toLocaleTimeString();
+                const total = entry.totalXp?.toLocaleString() ?? '0';
+                const delta = entry.delta;
+                const deltaClass = delta > 0 ? "gold-positive" : delta < 0 ? "gold-negative" : "gold-neutral";
+                const deltaSign = delta > 0 ? "+" : "";
+                const deltaText = delta !== 0 ? `${deltaSign}${delta.toLocaleString()}` : "—";
+
+                // Show associated events (kills, level ups)
+                const eventsHtml = entry.events && entry.events.length > 0
+                    ? `<div class="gold-events">${entry.events.map(e =>
+                        `<span class="gold-event">${e.message}</span>`
+                    ).join("")}</div>`
+                    : "";
+
+                return `
+                    <div class="gold-entry">
+                        <span class="log-time">${time}</span>
+                        <span class="gold-total">⭐ ${total}</span>
+                        <span class="gold-delta ${deltaClass}">${deltaText}</span>
+                        ${eventsHtml}
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function switchLogTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.log-tab').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
+            });
+
+            // Update content panels
+            document.querySelectorAll('.log-tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tab + 'TabContent').classList.add('active');
+        }
+
+        let bosses = [];
+        let respawns = [];
+
+        function renderBosses() {
+            const container = document.getElementById("bossTracker");
+
+            if (bosses.length === 0) {
+                container.innerHTML = '<div class="no-data">No bosses tracked...</div>';
+                return;
+            }
+
+            container.innerHTML = bosses.map(boss => {
+                const hpPercent = boss.maxHp > 0 ? Math.round((boss.hp / boss.maxHp) * 100) : 100;
+                const lastSeenAgo = formatTimeAgo(boss.lastSeen);
+
+                return `
+                    <div class="boss-item">
+                        <span class="boss-icon">👹</span>
+                        <div class="boss-info">
+                            <div class="boss-name">${boss.type} (Lv.${boss.level})</div>
+                            <div class="boss-location">${boss.map} (${boss.x}, ${boss.y}) • ${boss.server}</div>
+                        </div>
+                        <div class="boss-hp-bar" title="${boss.hp?.toLocaleString() ?? '?'}/${boss.maxHp?.toLocaleString() ?? '?'} HP">
+                            <div class="boss-hp-fill" style="width: ${hpPercent}%"></div>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function renderRespawns() {
+            const container = document.getElementById("respawnTimers");
+
+            if (respawns.length === 0) {
+                container.innerHTML = '<div class="no-data">No respawns tracked...</div>';
+                return;
+            }
+
+            container.innerHTML = respawns.map(spawn => {
+                const timeStr = formatCountdown(spawn.timeUntil);
+                const isExpired = spawn.timeUntil <= 0;
+
+                return `
+                    <div class="respawn-item">
+                        <span class="respawn-icon">${isExpired ? '✅' : '⏳'}</span>
+                        <div class="respawn-info">
+                            <div class="respawn-name">${spawn.type}</div>
+                            <div class="respawn-server">${spawn.server}</div>
+                        </div>
+                        <span class="respawn-countdown ${isExpired ? 'expired' : ''}">${isExpired ? 'SPAWNED!' : timeStr}</span>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        function formatTimeAgo(timestamp) {
+            const ago = Date.now() - timestamp;
+            if (ago < 60000) return 'now';
+            if (ago < 3600000) return Math.floor(ago / 60000) + 'm ago';
+            return Math.floor(ago / 3600000) + 'h ago';
+        }
+
+        function formatCountdown(ms) {
+            if (ms <= 0) return '0:00';
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            const secs = totalSeconds % 60;
+            if (hours > 0) return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function toggleError(element) {
+            element.classList.toggle("expanded");
+        }
+
+        function clearLogs() {
+            events = [];
+            renderEvents();
+        }
+
+        function clearErrors() {
+            errors = [];
+            renderErrors();
+        }
+
+        // Tab switching
+        document.querySelectorAll(".tab").forEach(tab => {
+            tab.addEventListener("click", () => {
+                document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+                document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+                tab.classList.add("active");
+                document.getElementById(tab.dataset.tab).classList.add("active");
+            });
+        });
+
+        // Start connection
+        connect();
+    </script>
+</body>
+
+</html>

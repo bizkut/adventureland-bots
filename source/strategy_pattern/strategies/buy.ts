@@ -167,6 +167,7 @@ export class BuyStrategy<Type extends PingCompensatedCharacter> implements Strat
 
                     // Transfer them
                     const slot = contextBot.locateItem(itemName, contextBot.items, { quantityGreaterThan: numWant - 1 })
+                    if (slot === undefined) break // Item not found, skip sending
                     await contextBot.sendItem(bot.id, slot, numWant)
                     break
                 }

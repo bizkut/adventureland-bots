@@ -1,4 +1,13 @@
 services:
+  mongo:
+    image: mongo:7
+    container_name: al-mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - al-network
+
   bot:
     build: .
     container_name: al-bot
@@ -10,7 +19,16 @@ services:
       - ./credentials.json:/app/credentials.json:rw
     environment:
       - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/adventureland
+    depends_on:
+      - mongo
+    networks:
+      - al-network
+
+volumes:
+  mongo_data:
+
 
 networks:
-  default:
+  al-network:
     name: al-network

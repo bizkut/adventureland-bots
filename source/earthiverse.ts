@@ -46,6 +46,7 @@ import { PartyHealStrategy } from "./strategy_pattern/strategies/partyheal.js"
 import { RespawnStrategy } from "./strategy_pattern/strategies/respawn.js"
 import { SellStrategy } from "./strategy_pattern/strategies/sell.js"
 import { TrackerStrategy } from "./strategy_pattern/strategies/tracker.js"
+import { BankInformationStrategy } from "./strategy_pattern/strategies/bank.js"
 
 import bodyParser from "body-parser"
 import cors from "cors"
@@ -78,15 +79,39 @@ import { HomeServerStrategy } from "./strategy_pattern/strategies/home_server.js
 import { ItemStrategy } from "./strategy_pattern/strategies/item.js"
 import { GiveRogueSpeedStrategy } from "./strategy_pattern/strategies/rspeed.js"
 import { TrackUpgradeStrategy } from "./strategy_pattern/strategies/statistics.js"
+import { DashboardEventStrategy } from "./strategy_pattern/strategies/dashboard_events.js"
+import { dashboard } from "./dashboard/dashboard.js"
+import http from "http"
+
+// Global error handlers to prevent crashes from unhandled promise rejections
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("Unhandled Rejection:", reason)
+})
+
+process.on("uncaughtException", (error) => {
+    console.error("Uncaught Exception:", error)
+})
 
 await Promise.all([AL.Game.loginJSONFile("../credentials.json", false), AL.Game.getGData(true)])
+
+// Connect to MongoDB if available
+const mongoUri = process.env.MONGO_URI
+if (mongoUri) {
+    try {
+        await AL.Database.connect(mongoUri)
+        console.log("Connected to MongoDB!")
+    } catch (e) {
+        console.error("Failed to connect to MongoDB:", e)
+    }
+}
+
 await AL.Pathfinder.prepare(AL.Game.G, { cheat: true, remove_abtesting: true, remove_test: true })
 
 // Toggles
-let ENABLE_EVENTS = false
-let ENABLE_SERVER_HOPS = false
-let ENABLE_SPECIAL_MONSTERS = false
-let ENABLE_MONSTERHUNTS = false
+let ENABLE_EVENTS = true
+let ENABLE_SERVER_HOPS = true
+let ENABLE_SPECIAL_MONSTERS = true
+let ENABLE_MONSTERHUNTS = true
 const DEFAULT_MONSTERS: MonsterName[] = ["xscorpion"]
 const SPECIAL_MONSTERS: MonsterName[] = [
     "crabxx",
@@ -115,7 +140,7 @@ const RANGERS: string[] = [] // earthiverse, earthRan2, earthRan3
 const PALADINS: string[] = ["Kapten"] // earthPal
 const ROGUES: string[] = [] // earthRog, earthRog2, earthRog3
 
-const PARTY_ALLOWLIST: string[] = [...WARRIORS, ...RANGERS, ...MAGES, ...PRIESTS, ...PALADINS, ...ROGUES]
+const PARTY_ALLOWLIST: string[] = [...PALADINS, ...WARRIORS, ...RANGERS, ...MAGES, ...PRIESTS, ...ROGUES]
 const PARTY_LEADER: string = PARTY_ALLOWLIST[0]
 
 // Sanity checks
@@ -192,6 +217,8 @@ const privateItemStrategy = new ItemStrategy({
     itemConfig: DEFAULT_ITEM_CONFIG,
 })
 const upgradeStatisticsStrategy = new TrackUpgradeStrategy()
+const dashboardEventStrategy = new DashboardEventStrategy()
+const bankInformationStrategy = new BankInformationStrategy()
 
 let OVERRIDE_MONSTERS: MonsterName[]
 let OVERRIDE_REGION: ServerRegion
@@ -830,6 +857,8 @@ async function startShared(context: Strategist<PingCompensatedCharacter>, privat
     context.applyStrategy(elixirStrategy)
     context.applyStrategy(destroyStrategy)
     context.applyStrategy(upgradeStatisticsStrategy)
+    context.applyStrategy(dashboardEventStrategy)
+    context.applyStrategy(bankInformationStrategy)
 }
 
 async function startMage(context: Strategist<Mage>, privateContext = false) {
@@ -913,7 +942,7 @@ const startWarriorContext = async (name: string) => {
     } catch (e) {
         if (warrior) warrior.disconnect()
         console.error(e)
-        setTimeout(startWarriorContext, 10_000)
+        setTimeout(startWarriorContext, 10_000, name)
         return
     }
     const CONTEXT = new Strategist<Warrior>(warrior, baseStrategy)
@@ -930,7 +959,7 @@ const startMageContext = async (name: string) => {
     } catch (e) {
         if (mage) mage.disconnect()
         console.error(e)
-        setTimeout(startMageContext, 10_000)
+        setTimeout(startMageContext, 10_000, name)
         return
     }
     const CONTEXT = new Strategist<Mage>(mage, baseStrategy)
@@ -947,7 +976,7 @@ const startPaladinContext = async (name: string) => {
     } catch (e) {
         if (paladin) paladin.disconnect()
         console.error(e)
-        setTimeout(startPaladinContext, 10_000)
+        setTimeout(startPaladinContext, 10_000, name)
         return
     }
     const CONTEXT = new Strategist<Paladin>(paladin, baseStrategy)
@@ -964,7 +993,7 @@ const startPriestContext = async (name: string) => {
     } catch (e) {
         if (priest) priest.disconnect()
         console.error(e)
-        setTimeout(startPriestContext, 10_000)
+        setTimeout(startPriestContext, 10_000, name)
         return
     }
     const CONTEXT = new Strategist<Priest>(priest, baseStrategy)
@@ -981,7 +1010,7 @@ const startRangerContext = async (name: string) => {
     } catch (e) {
         if (ranger) ranger.disconnect()
         console.error(e)
-        setTimeout(startRangerContext, 10_000)
+        setTimeout(startRangerContext, 10_000, name)
         return
     }
     const CONTEXT = new Strategist<Ranger>(ranger, baseStrategy)
@@ -998,7 +1027,7 @@ const startRogueContext = async (name: string) => {
     } catch (e) {
         if (rogue) rogue.disconnect()
         console.error(e)
-        setTimeout(startRogueContext, 10_000)
+        setTimeout(startRogueContext, 10_000, name)
         return
     }
     const CONTEXT = new Strategist<Rogue>(rogue, baseStrategy)
@@ -1328,6 +1357,17 @@ app.post(
     },
 )
 
-app.listen(port, async () => {
+const server = http.createServer(app)
+
+// Attach dashboard WebSocket to the server
+dashboard.setContexts(ALL_CONTEXTS)
+dashboard.attachToServer(server)
+
+app.get("/dashboard", (_req, res) => {
+    res.sendFile(path.join(path.resolve(), "/dashboard/dashboard.html"))
+})
+
+server.listen(port, async () => {
     console.log(`Ready on port ${port}!`)
+    console.log(`Dashboard available at http://localhost:${port}/dashboard`)
 })
