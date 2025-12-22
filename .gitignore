@@ -71,3 +71,6 @@ credentials*.json
 
 # G info
 G_*.json
+
+# Adventure Land server source
+adventureland/
