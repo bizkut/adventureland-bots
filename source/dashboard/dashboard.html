@@ -1563,9 +1563,9 @@
         const MAP_DECORATIONS = {
             main: {
                 zones: [
-                    { name: 'Town', type: 'rect', x: -350, y: -400, w: 700, h: 500, color: 'rgba(255, 255, 255, 0.05)' },
-                    { name: 'Western Woods', type: 'rect', x: -1500, y: 300, w: 800, h: 1800, color: 'rgba(46, 204, 113, 0.03)' },
-                    { name: 'Eastern Hills', type: 'rect', x: 800, y: -400, w: 1000, h: 1000, color: 'rgba(241, 196, 15, 0.03)' }
+                    { name: 'Town', type: 'rect', x: -350, y: -400, w: 700, h: 500, color: 'rgba(255, 255, 255, 0.12)' },
+                    { name: 'Western Woods', type: 'rect', x: -1500, y: 300, w: 800, h: 1800, color: 'rgba(46, 204, 113, 0.08)' },
+                    { name: 'Eastern Hills', type: 'rect', x: 800, y: -400, w: 1000, h: 1000, color: 'rgba(241, 196, 15, 0.08)' }
                 ],
                 landmarks: [
                     { name: 'Town Square', x: 0, y: 0, icon: '🏠' },
@@ -1580,7 +1580,7 @@
             },
             cave: {
                 zones: [
-                    { name: 'Entrance', type: 'rect', x: -400, y: -1400, w: 400, h: 200, color: 'rgba(100, 100, 100, 0.1)' }
+                    { name: 'Entrance', type: 'rect', x: -400, y: -1400, w: 400, h: 200, color: 'rgba(150, 150, 150, 0.15)' }
                 ],
                 landmarks: [
                     { name: 'Crypt Entrance', x: -193, y: -1295, icon: '🗝️' },
@@ -1590,7 +1590,7 @@
             },
             winterland: {
                 zones: [
-                    { name: 'Ice Fields', type: 'rect', x: -200, y: -2200, w: 1400, h: 1500, color: 'rgba(100, 200, 255, 0.05)' }
+                    { name: 'Ice Fields', type: 'rect', x: -200, y: -2200, w: 1400, h: 1500, color: 'rgba(100, 200, 255, 0.12)' }
                 ],
                 landmarks: [
                     { name: 'Boars', x: 19, y: -1109, icon: '🐗' },
@@ -2493,7 +2493,7 @@
             }
 
             // Clear canvas
-            ctx.fillStyle = 'rgba(20, 20, 40, 1)';
+            ctx.fillStyle = 'rgba(28, 28, 48, 1)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             // Calculate scale and base offset
@@ -2540,7 +2540,7 @@
             }
 
             // Draw grid lines (simplified for global)
-            ctx.strokeStyle = 'rgba(100, 100, 150, 0.1)';
+            ctx.strokeStyle = 'rgba(120, 120, 180, 0.15)';
             ctx.lineWidth = 1;
             const gridSpacing = 500;
             const startX = Math.ceil(viewBounds.minX / gridSpacing) * gridSpacing;
