@@ -141,7 +141,10 @@ export class Dashboard {
 
     constructor() {
         // Take snapshots every 10 seconds for better activity correlation
-        setInterval(() => this.takeSnapshots(), 10_000)
+        setInterval(() => {
+            this.takeSnapshots()
+            this.calculateXpPerHour()  // Update cached XP/hour (only queries DB every 30 sec)
+        }, 10_000)
         // Load persistent stats from DB
         this.loadPersistentStats()
     }
@@ -444,15 +447,52 @@ export class Dashboard {
         }
     }
 
-    private calculateXpPerHour(): number {
-        if (this.xpSnapshots.length < 2) return 0
-        const oldest = this.xpSnapshots[0]
-        const newest = this.xpSnapshots[this.xpSnapshots.length - 1]
-        const hourFraction = (newest.timestamp - oldest.timestamp) / 3600_000
-        // Require at least 5 minutes of data for stable rate calculation
-        if (hourFraction < 0.08) return 0
-        // Clamp to 0 minimum (XP can appear negative due to level-up resets or disconnects)
-        return Math.max(0, Math.round((newest.xp - oldest.xp) / hourFraction))
+    // XP/hour cache - calculated from DB every 30 seconds
+    private cachedXpPerHour: number = 0
+    private xpPerHourLastCalculated: number = 0
+
+    private async calculateXpPerHour(): Promise<number> {
+        // Return cached value if calculated recently (within 30 seconds)
+        const now = Date.now()
+        if (now - this.xpPerHourLastCalculated < 30_000 && this.cachedXpPerHour > 0) {
+            return this.cachedXpPerHour
+        }
+
+        if (!this.dbReady) return this.cachedXpPerHour
+        try {
+            const oneHourAgo = new Date(now - 3600_000)
+
+            // Get oldest record from the last hour
+            const oldest = await (XpHistoryModel as any)
+                .findOne({ timestamp: { $gte: oneHourAgo } })
+                .sort({ timestamp: 1 })
+                .lean()
+                .exec()
+
+            // Get newest record
+            const newest = await (XpHistoryModel as any)
+                .findOne()
+                .sort({ timestamp: -1 })
+                .lean()
+                .exec()
+
+            if (!oldest || !newest) return this.cachedXpPerHour
+
+            const oldTime = new Date(oldest.timestamp).getTime()
+            const newTime = new Date(newest.timestamp).getTime()
+            const hourFraction = (newTime - oldTime) / 3600_000
+
+            // Require at least 5 minutes of data
+            if (hourFraction < 0.08) return this.cachedXpPerHour
+
+            const xpDiff = newest.totalXp - oldest.totalXp
+            this.cachedXpPerHour = Math.max(0, Math.round(xpDiff / hourFraction))
+            this.xpPerHourLastCalculated = now
+            return this.cachedXpPerHour
+        } catch (e) {
+            console.error("Failed to calculate XP/hour:", e)
+            return this.cachedXpPerHour
+        }
     }
 
     public getCharacterStats(): CharacterStats[] {
@@ -490,7 +530,7 @@ export class Dashboard {
             bankGold: this.getBankGold(),
             goldGainedPerHour: goldRates.gained,
             goldSpentPerHour: goldRates.spent,
-            xpPerHour: this.calculateXpPerHour(),
+            xpPerHour: this.cachedXpPerHour,
             kills: this.kills,
             deaths: this.deaths,
             items: this.itemsLooted,
