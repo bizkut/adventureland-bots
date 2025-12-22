@@ -400,6 +400,101 @@
             box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
         }
 
+        .character-card.clickable {
+            cursor: pointer;
+        }
+
+        .character-card .expand-indicator {
+            float: right;
+            color: var(--text-secondary);
+            font-size: 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .character-card.expanded .expand-indicator {
+            transform: rotate(180deg);
+        }
+
+        .character-expanded-details {
+            display: none;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .character-card.expanded .character-expanded-details {
+            display: block;
+        }
+
+        .combat-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .combat-stat {
+            text-align: center;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .combat-stat-label {
+            display: block;
+            font-size: 10px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .combat-stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .equipment-section h4 {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .equipment-slot {
+            padding: 8px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+            font-size: 11px;
+        }
+
+        .equipment-slot-name {
+            color: var(--text-secondary);
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+
+        .equipment-slot-item {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        .equipment-slot-item.empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .equipment-slot-level {
+            color: var(--accent-green);
+            font-size: 10px;
+        }
+
         .character-header {
             display: flex;
             align-items: center;
@@ -1031,6 +1126,96 @@
             font-weight: 500;
         }
 
+        /* Minimap Tab Styles */
+        .minimap-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+        }
+
+        .minimap-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .minimap-selector label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .minimap-selector select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 16px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .minimap-selector select:focus {
+            outline: none;
+            border-color: var(--border-glow);
+        }
+
+        .minimap-legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .minimap-container {
+            position: relative;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 16px;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #minimapCanvas {
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.4);
+            display: none;
+        }
+
+        .minimap-placeholder {
+            color: var(--text-muted);
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .minimap-container.loaded #minimapCanvas {
+            display: block;
+        }
+
+        .minimap-container.loaded .minimap-placeholder {
+            display: none;
+        }
+
         /* Error Tab Styles */
         .error-summary {
             display: flex;
@@ -1130,6 +1315,7 @@
 
     <div class="tabs">
         <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab" data-tab="minimap">🗺️ Minimap</button>
         <button class="tab" data-tab="errors">⚠️ Errors <span id="errorCount"></span></button>
     </div>
 
@@ -1291,6 +1477,33 @@
         </div>
     </div>
 
+    <!-- Minimap Tab -->
+    <div id="minimap" class="tab-content">
+        <div class="minimap-controls">
+            <div class="minimap-selector">
+                <label for="mapSelect">Map:</label>
+                <select id="mapSelect" onchange="renderMinimap()">
+                    <option value="global">Global View</option>
+                    <option value="main">Main</option>
+                    <option value="cave">Cave</option>
+                    <option value="winterland">Winterland</option>
+                    <option value="desertland">Desertland</option>
+                    <option value="halloween">Halloween</option>
+                    <option value="crypt">Crypt</option>
+                    <option value="tunnel">Tunnel</option>
+                    <option value="bank">Bank</option>
+                </select>
+            </div>
+            <div class="minimap-legend" id="minimapLegend"></div>
+        </div>
+        <div class="minimap-container">
+            <canvas id="minimapCanvas" width="800" height="500"></canvas>
+            <div class="minimap-placeholder" id="minimapPlaceholder">
+                Click the Minimap tab to load the map view
+            </div>
+        </div>
+    </div>
+
     <!-- Errors Tab -->
     <div id="errors" class="tab-content">
         <div class="error-summary">
@@ -1310,6 +1523,105 @@
         let errors = [];
         let reconnectAttempts = 0;
         const expandedEvents = new Set();  // Track which events are expanded by timestamp
+
+        // Minimap state
+        let minimapInitialized = false;
+        let currentCharacters = [];
+        let minimapView = {
+            offsetX: 0,
+            offsetY: 0,
+            zoom: 1,
+            manual: false
+        };
+        let isPanning = false;
+        let lastMousePos = { x: 0, y: 0 };
+        let focusedCharacter = null;
+
+        // Map bounds (minX, maxX, minY, maxY)
+        const MAP_BOUNDS = {
+            main: { minX: -1500, maxX: 1800, minY: -400, maxY: 2100 },
+            cave: { minX: -400, maxX: 1400, minY: -1400, maxY: 100 },
+            winterland: { minX: -200, maxX: 1200, minY: -2200, maxY: -700 },
+            desertland: { minX: -1000, maxX: 500, minY: -1600, maxY: 300 },
+            halloween: { minX: -700, maxX: 500, minY: -900, maxY: 800 },
+            crypt: { minX: -100, maxX: 2800, minY: -100, maxY: 700 },
+            tunnel: { minX: -400, maxX: 200, minY: -200, maxY: 200 },
+            bank: { minX: -200, maxX: 200, minY: -300, maxY: 100 }
+        };
+
+        const WORLD_OFFSETS = {
+            main: { x: 0, y: 0 },
+            cave: { x: 4000, y: 0 },
+            winterland: { x: 0, y: 4000 },
+            desertland: { x: -4000, y: 0 },
+            halloween: { x: 0, y: -4000 },
+            crypt: { x: 4000, y: 4000 },
+            tunnel: { x: 2000, y: 0 },
+            bank: { x: 0, y: -2000 }
+        };
+
+        const MAP_DECORATIONS = {
+            main: {
+                zones: [
+                    { name: 'Town', type: 'rect', x: -350, y: -400, w: 700, h: 500, color: 'rgba(255, 255, 255, 0.05)' },
+                    { name: 'Western Woods', type: 'rect', x: -1500, y: 300, w: 800, h: 1800, color: 'rgba(46, 204, 113, 0.03)' },
+                    { name: 'Eastern Hills', type: 'rect', x: 800, y: -400, w: 1000, h: 1000, color: 'rgba(241, 196, 15, 0.03)' }
+                ],
+                landmarks: [
+                    { name: 'Town Square', x: 0, y: 0, icon: '🏠' },
+                    { name: 'Crabs', x: -1202, y: -66, icon: '🦀' },
+                    { name: 'Goo', x: -64, y: 787, icon: '💧' },
+                    { name: 'Bees', x: 152, y: 1487, icon: '🐝' },
+                    { name: 'Spiders', x: 948, y: -144, icon: '🕷️' },
+                    { name: 'Scorpions', x: 1577, y: -168, icon: '🦂' },
+                    { name: 'Snakes', x: -82, y: 1901, icon: '🐍' },
+                    { name: 'Frogs', x: -1124, y: 1118, icon: '🐸' }
+                ]
+            },
+            cave: {
+                zones: [
+                    { name: 'Entrance', type: 'rect', x: -400, y: -1400, w: 400, h: 200, color: 'rgba(100, 100, 100, 0.1)' }
+                ],
+                landmarks: [
+                    { name: 'Crypt Entrance', x: -193, y: -1295, icon: '🗝️' },
+                    { name: 'Bats', x: 323, y: -1107, icon: '🦇' },
+                    { name: 'Bats (SE)', x: 1243, y: -27, icon: '🦇' }
+                ]
+            },
+            winterland: {
+                zones: [
+                    { name: 'Ice Fields', type: 'rect', x: -200, y: -2200, w: 1400, h: 1500, color: 'rgba(100, 200, 255, 0.05)' }
+                ],
+                landmarks: [
+                    { name: 'Boars', x: 19, y: -1109, icon: '🐗' },
+                    { name: 'Arctic Bees', x: 1082, y: -873, icon: '🐝' },
+                    { name: 'XMage', x: 1060, y: -2000, icon: '🧙' }
+                ]
+            },
+            desertland: {
+                landmarks: [
+                    { name: 'Porcupines', x: -829, y: 135, icon: '🦔' },
+                    { name: 'Scorpions', x: 390, y: -1422, icon: '🦂' }
+                ]
+            },
+            halloween: {
+                landmarks: [
+                    { name: 'Mini Mushes', x: 16, y: 630, icon: '🍄' },
+                    { name: 'X-Scorpions', x: -485, y: 685, icon: '🦂' }
+                ]
+            }
+        };
+
+        // Class colors for minimap
+        const CLASS_COLORS = {
+            warrior: '#e74c3c',
+            priest: '#2ecc71',
+            mage: '#3498db',
+            ranger: '#f39c12',
+            merchant: '#9b59b6',
+            paladin: '#1abc9c',
+            rogue: '#e67e22'
+        };
 
         const CLASS_ICONS = {
             mage: "🧙",
@@ -1605,6 +1917,12 @@
         function updateCharacters(characters) {
             const grid = document.getElementById("charactersGrid");
 
+            // Update minimap character data
+            currentCharacters = characters || [];
+            if (minimapInitialized) {
+                renderMinimap();
+            }
+
             if (!characters || characters.length === 0) {
                 grid.innerHTML = '<div class="no-data">No characters connected</div>';
                 return;
@@ -1779,8 +2097,34 @@
                     }
                 }
 
+                // Build equipment HTML
+                let equipmentHtml = '';
+                if (char.slots) {
+                    const slotOrder = ['helmet', 'amulet', 'earring1', 'chest', 'ring1', 'earring2', 'pants', 'ring2', 'cape', 'mainhand', 'offhand', 'orb', 'gloves', 'belt', 'shoes'];
+                    equipmentHtml = slotOrder.map(slot => {
+                        const item = char.slots[slot];
+                        const slotLabel = slot.replace(/([0-9])/g, ' $1').replace(/([a-z])([A-Z])/g, '$1 $2');
+                        if (item) {
+                            const levelStr = item.level ? ` <span class="equipment-slot-level">+${item.level}</span>` : '';
+                            return `<div class="equipment-slot">
+                                <div class="equipment-slot-name">${slotLabel}</div>
+                                <div class="equipment-slot-item">${item.name}${levelStr}</div>
+                            </div>`;
+                        } else {
+                            return `<div class="equipment-slot">
+                                <div class="equipment-slot-name">${slotLabel}</div>
+                                <div class="equipment-slot-item empty">Empty</div>
+                            </div>`;
+                        }
+                    }).join('');
+                }
+
+                const isExpanded = expandedCharacterCards.has(char.name);
+                const expandedClass = isExpanded ? 'expanded' : '';
+
                 return `
-                    <div class="character-card">
+                    <div class="character-card clickable ${expandedClass}" onclick="toggleCharacterCard(this)">
+                        <span class="expand-indicator">▼</span>
                         <div class="character-header">
                             <div class="character-avatar ${char.type}">
                                 ${spriteHtml}
@@ -1828,6 +2172,38 @@
                             <div class="character-stat">
                                 <span class="character-stat-label">Server</span>
                                 <span class="character-stat-value">${char.server || "N/A"}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="character-expanded-details">
+                            <div class="combat-stats-grid">
+                                <div class="combat-stat">
+                                    <span class="combat-stat-label">Attack</span>
+                                    <span class="combat-stat-value">${char.attack ?? 'N/A'}</span>
+                                </div>
+                                <div class="combat-stat">
+                                    <span class="combat-stat-label">Armor</span>
+                                    <span class="combat-stat-value">${char.armor ?? 'N/A'}</span>
+                                </div>
+                                <div class="combat-stat">
+                                    <span class="combat-stat-label">Resist</span>
+                                    <span class="combat-stat-value">${char.resistance ?? 'N/A'}</span>
+                                </div>
+                                <div class="combat-stat">
+                                    <span class="combat-stat-label">Speed</span>
+                                    <span class="combat-stat-value">${char.speed ?? 'N/A'}</span>
+                                </div>
+                                <div class="combat-stat">
+                                    <span class="combat-stat-label">Range</span>
+                                    <span class="combat-stat-value">${char.range ?? 'N/A'}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="equipment-section">
+                                <h4>Equipment</h4>
+                                <div class="equipment-grid">
+                                    ${equipmentHtml || '<div class="equipment-slot"><div class="equipment-slot-item empty">No equipment data</div></div>'}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2021,6 +2397,285 @@
 
         function closeEventModal() {
             document.getElementById('eventModal').style.display = 'none';
+        }
+
+        // Initialize minimap (called on first tab click)
+        function initMinimap() {
+            if (minimapInitialized) return;
+            minimapInitialized = true;
+
+            const canvas = document.getElementById('minimapCanvas');
+            const container = document.querySelector('.minimap-container');
+            container.classList.add('loaded');
+
+            // --- Interaction Listeners ---
+            canvas.style.cursor = 'grab';
+
+            canvas.addEventListener('mousedown', (e) => {
+                isPanning = true;
+                lastMousePos = { x: e.clientX, y: e.clientY };
+                canvas.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+
+                const dx = e.clientX - lastMousePos.x;
+                const dy = e.clientY - lastMousePos.y;
+
+                minimapView.offsetX += dx;
+                minimapView.offsetY += dy;
+                minimapView.manual = true;
+
+                lastMousePos = { x: e.clientX, y: e.clientY };
+                renderMinimap();
+            });
+
+            window.addEventListener('mouseup', () => {
+                isPanning = false;
+                canvas.style.cursor = 'grab';
+            });
+
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = -e.deltaY;
+                const factor = Math.pow(1.1, delta / 100);
+
+                // Zoom towards mouse position (complex, let's keep it simple for now)
+                minimapView.zoom *= factor;
+                minimapView.zoom = Math.max(0.1, Math.min(20, minimapView.zoom));
+                minimapView.manual = true;
+
+                renderMinimap();
+            }, { passive: false });
+
+            canvas.addEventListener('dblclick', () => {
+                minimapView.manual = false;
+                minimapView.offsetX = 0;
+                minimapView.offsetY = 0;
+                minimapView.zoom = 1;
+                renderMinimap();
+            });
+
+            renderMinimap();
+        }
+
+        // Render the minimap canvas
+        function renderMinimap() {
+            if (!minimapInitialized) return;
+
+            const canvas = document.getElementById('minimapCanvas');
+            const ctx = canvas.getContext('2d');
+            const selectedMap = document.getElementById('mapSelect').value;
+
+            // Calculate view bounds
+            let viewBounds;
+            if (selectedMap === 'global') {
+                let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+                for (const m in MAP_BOUNDS) {
+                    const b = MAP_BOUNDS[m];
+                    const offset = WORLD_OFFSETS[m] || { x: 0, y: 0 };
+                    minX = Math.min(minX, b.minX + offset.x);
+                    maxX = Math.max(maxX, b.maxX + offset.x);
+                    minY = Math.min(minY, b.minY + offset.y);
+                    maxY = Math.max(maxY, b.maxY + offset.y);
+                }
+                viewBounds = { minX, maxX, minY, maxY };
+            } else {
+                viewBounds = MAP_BOUNDS[selectedMap] || MAP_BOUNDS.main;
+                const offset = WORLD_OFFSETS[selectedMap] || { x: 0, y: 0 };
+                viewBounds = {
+                    minX: viewBounds.minX + offset.x,
+                    maxX: viewBounds.maxX + offset.x,
+                    minY: viewBounds.minY + offset.y,
+                    maxY: viewBounds.maxY + offset.y
+                };
+            }
+
+            // Clear canvas
+            ctx.fillStyle = 'rgba(20, 20, 40, 1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Calculate scale and base offset
+            const worldWidth = viewBounds.maxX - viewBounds.minX;
+            const worldHeight = viewBounds.maxY - viewBounds.minY;
+            const padding = 40;
+            const scaleX = (canvas.width - padding * 2) / worldWidth;
+            const scaleY = (canvas.height - padding * 2) / worldHeight;
+            let finalScale = Math.min(scaleX, scaleY);
+
+            let finalOffsetX = padding + (canvas.width - padding * 2 - worldWidth * finalScale) / 2;
+            let finalOffsetY = padding + (canvas.height - padding * 2 - worldHeight * finalScale) / 2;
+
+            // Apply Focus Mode (if not manual)
+            if (!minimapView.manual && focusedCharacter) {
+                const char = currentCharacters.find(c => c.name === focusedCharacter);
+                if (char) {
+                    const offset = WORLD_OFFSETS[char.map] || { x: 0, y: 0 };
+                    const worldX = char.x + offset.x;
+                    const worldY = char.y + offset.y;
+
+                    // Center world coord (worldX, worldY) on canvas center
+                    finalOffsetX = (canvas.width / 2) - (worldX - viewBounds.minX) * finalScale;
+                    finalOffsetY = (canvas.height / 2) - (worldY - viewBounds.minY) * finalScale;
+                }
+            }
+
+            // Apply manual view state
+            if (minimapView.manual) {
+                finalScale *= minimapView.zoom;
+                finalOffsetX += minimapView.offsetX;
+                finalOffsetY += minimapView.offsetY;
+            }
+
+            // Transform game coords to canvas coords (always uses world-relative)
+            function toCanvas(x, y, mapName) {
+                const mapOffset = WORLD_OFFSETS[mapName] || { x: 0, y: 0 };
+                const worldX = x + mapOffset.x;
+                const worldY = y + mapOffset.y;
+                return {
+                    x: finalOffsetX + (worldX - viewBounds.minX) * finalScale,
+                    y: finalOffsetY + (worldY - viewBounds.minY) * finalScale
+                };
+            }
+
+            // Draw grid lines (simplified for global)
+            ctx.strokeStyle = 'rgba(100, 100, 150, 0.1)';
+            ctx.lineWidth = 1;
+            const gridSpacing = 500;
+            const startX = Math.ceil(viewBounds.minX / gridSpacing) * gridSpacing;
+            const startY = Math.ceil(viewBounds.minY / gridSpacing) * gridSpacing;
+
+            for (let x = startX; x <= viewBounds.maxX; x += gridSpacing) {
+                const p = { x: finalOffsetX + (x - viewBounds.minX) * finalScale, y: 0 };
+                ctx.beginPath();
+                ctx.moveTo(p.x, 0);
+                ctx.lineTo(p.x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = startY; y <= viewBounds.maxY; y += gridSpacing) {
+                const p = { y: finalOffsetY + (y - viewBounds.minY) * finalScale, x: 0 };
+                ctx.beginPath();
+                ctx.moveTo(0, p.y);
+                ctx.lineTo(canvas.width, p.y);
+                ctx.stroke();
+            }
+
+            // Draw origin crosshair (World Origin at main 0,0)
+            ctx.strokeStyle = 'rgba(150, 150, 200, 0.3)';
+            ctx.lineWidth = 2;
+            const origin = toCanvas(0, 0, 'main');
+
+            // World X-axis
+            if (origin.y >= 0 && origin.y <= canvas.height) {
+                ctx.beginPath();
+                ctx.moveTo(0, origin.y);
+                ctx.lineTo(canvas.width, origin.y);
+                ctx.stroke();
+            }
+
+            // World Y-axis
+            if (origin.x >= 0 && origin.x <= canvas.width) {
+                ctx.beginPath();
+                ctx.moveTo(origin.x, 0);
+                ctx.lineTo(origin.x, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw Map Decorations for ALL maps
+            for (const mapName in MAP_DECORATIONS) {
+                const decorations = MAP_DECORATIONS[mapName];
+
+                // Draw Zones
+                if (decorations.zones) {
+                    decorations.zones.forEach(zone => {
+                        if (zone.type === 'rect') {
+                            const p1 = toCanvas(zone.x, zone.y, mapName);
+                            const p2 = toCanvas(zone.x + zone.w, zone.y + zone.h, mapName);
+                            ctx.fillStyle = zone.color;
+                            ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+
+                            if (finalScale > 0.1) {
+                                ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                                ctx.font = `${Math.max(8, 10 * finalScale)}px Inter, sans-serif`;
+                                ctx.fillText(zone.name, p1.x + 5, p1.y + 15);
+                            }
+                        }
+                    });
+                }
+
+                // Draw Landmarks
+                if (decorations.landmarks) {
+                    decorations.landmarks.forEach(lm => {
+                        const pos = toCanvas(lm.x, lm.y, mapName);
+                        ctx.font = '14px Inter, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(lm.icon, pos.x, pos.y + 5);
+
+                        if (finalScale > 0.5) {
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                            ctx.font = '10px Inter, sans-serif';
+                            ctx.fillText(lm.name, pos.x, pos.y + 18);
+                        }
+                    });
+                }
+            }
+
+            // Draw map label
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.font = 'bold 14px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(selectedMap.toUpperCase(), 10, 20);
+
+            // Draw characters
+            currentCharacters.forEach(char => {
+                const pos = toCanvas(char.x, char.y, char.map);
+                const color = CLASS_COLORS[char.type] || '#ffffff';
+
+                // Skip if way out of bounds
+                if (pos.x < -100 || pos.x > canvas.width + 100 || pos.y < -100 || pos.y > canvas.height + 100) return;
+
+                // Draw glow
+                const gradient = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 20);
+                gradient.addColorStop(0, color + '60');
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw dot
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw border
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Draw name label
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '11px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(char.name, pos.x, pos.y - 12);
+            });
+
+            // Update legend
+            updateMinimapLegend();
+        }
+
+        // Update the minimap legend with current characters
+        function updateMinimapLegend() {
+            const legend = document.getElementById('minimapLegend');
+            legend.innerHTML = currentCharacters.map(char => {
+                const color = CLASS_COLORS[char.type] || '#ffffff';
+                return `<div class="legend-item">
+                    <div class="legend-dot" style="background: ${color}"></div>
+                    <span>${char.name} (${char.map})</span>
+                </div>`;
+            }).join('');
         }
 
         function renderErrors() {
@@ -2228,6 +2883,25 @@
             return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
 
+        // Track which character cards are expanded by character name
+        const expandedCharacterCards = new Set();
+
+        function toggleCharacterCard(element) {
+            const name = element.querySelector('.character-name')?.textContent;
+            element.classList.toggle("expanded");
+            if (name) {
+                if (element.classList.contains("expanded")) {
+                    expandedCharacterCards.add(name);
+                    focusedCharacter = name; // Focus on the expanded character
+                    minimapView.manual = false; // Reset manual mode to auto-focus
+                } else {
+                    expandedCharacterCards.delete(name);
+                    if (focusedCharacter === name) focusedCharacter = null;
+                }
+                renderMinimap(); // Re-render to focus
+            }
+        }
+
         function toggleError(element) {
             element.classList.toggle("expanded");
         }
@@ -2264,6 +2938,11 @@
                 document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
                 tab.classList.add("active");
                 document.getElementById(tab.dataset.tab).classList.add("active");
+
+                // Lazy load minimap when tab is clicked
+                if (tab.dataset.tab === 'minimap') {
+                    initMinimap();
+                }
             });
         });
 

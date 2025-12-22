@@ -13,6 +13,12 @@ export interface DashboardEvent {
     details?: Record<string, unknown>
 }
 
+export interface EquipmentSlot {
+    name: string
+    level?: number
+    data?: Record<string, unknown>
+}
+
 export interface CharacterStats {
     id: string
     name: string
@@ -39,6 +45,14 @@ export interface CharacterStats {
         hat?: string
         upper?: string
     }
+    // Combat stats
+    attack?: number
+    armor?: number
+    resistance?: number
+    speed?: number
+    range?: number
+    // Equipment slots
+    slots?: Record<string, EquipmentSlot | null>
 }
 
 export interface DashboardStats {
@@ -498,6 +512,26 @@ export class Dashboard {
     public getCharacterStats(): CharacterStats[] {
         return this.contexts.map(ctx => {
             const bot = ctx.bot
+
+            // Build equipment slots
+            const slots: Record<string, EquipmentSlot | null> = {}
+            if (bot?.slots) {
+                const slotNames = ['helmet', 'chest', 'pants', 'shoes', 'gloves', 'mainhand', 'offhand',
+                    'ring1', 'ring2', 'amulet', 'orb', 'belt', 'cape', 'earring1', 'earring2']
+                for (const slotName of slotNames) {
+                    const item = (bot.slots as any)[slotName]
+                    if (item) {
+                        slots[slotName] = {
+                            name: item.name ?? slotName,
+                            level: item.level,
+                            data: item.data
+                        }
+                    } else {
+                        slots[slotName] = null
+                    }
+                }
+            }
+
             return {
                 id: bot?.id ?? "unknown",
                 name: bot?.id ?? "unknown",
@@ -518,7 +552,15 @@ export class Dashboard {
                 server: bot?.serverData ? `${bot.serverData.region}${bot.serverData.name}` : undefined,
                 skin: bot?.skin ?? undefined,
                 moving: bot?.moving ?? false,
-                cx: bot?.cx ?? undefined
+                cx: bot?.cx ?? undefined,
+                // Combat stats
+                attack: bot?.attack ?? undefined,
+                armor: bot?.armor ?? undefined,
+                resistance: bot?.resistance ?? undefined,
+                speed: bot?.speed ?? undefined,
+                range: bot?.range ?? undefined,
+                // Equipment
+                slots: Object.keys(slots).length > 0 ? slots : undefined
             }
         })
     }
