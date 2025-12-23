@@ -476,31 +476,15 @@ export class Dashboard {
         try {
             const oneHourAgo = new Date(now - 3600_000)
 
-            // Get oldest record from the last hour
-            const oldest = await (XpHistoryModel as any)
-                .findOne({ timestamp: { $gte: oneHourAgo } })
-                .sort({ timestamp: 1 })
-                .lean()
-                .exec()
+            // Sum all positive deltas from the past hour
+            // This accurately reflects XP gained during active time only,
+            // ignoring gaps from bot downtime
+            const result = await (XpHistoryModel as any).aggregate([
+                { $match: { timestamp: { $gte: oneHourAgo }, delta: { $gt: 0 } } },
+                { $group: { _id: null, total: { $sum: "$delta" } } }
+            ]).exec()
 
-            // Get newest record
-            const newest = await (XpHistoryModel as any)
-                .findOne()
-                .sort({ timestamp: -1 })
-                .lean()
-                .exec()
-
-            if (!oldest || !newest) return this.cachedXpPerHour
-
-            const oldTime = new Date(oldest.timestamp).getTime()
-            const newTime = new Date(newest.timestamp).getTime()
-            const hourFraction = (newTime - oldTime) / 3600_000
-
-            // Require at least 5 minutes of data
-            if (hourFraction < 0.08) return this.cachedXpPerHour
-
-            const xpDiff = newest.totalXp - oldest.totalXp
-            this.cachedXpPerHour = Math.max(0, Math.round(xpDiff / hourFraction))
+            this.cachedXpPerHour = result[0]?.total ?? 0
             this.xpPerHourLastCalculated = now
             return this.cachedXpPerHour
         } catch (e) {
@@ -508,6 +492,7 @@ export class Dashboard {
             return this.cachedXpPerHour
         }
     }
+
 
     public getCharacterStats(): CharacterStats[] {
         return this.contexts.map(ctx => {
